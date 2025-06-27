@@ -565,12 +565,7 @@ const SonnensucheApp = () => {
                         const bookingUrl = `https://www.booking.com/searchresults.html?aid=12345678&label=sonnensuche&dest_type=city&ss=${encodeURIComponent(spot.name)}&checkin=${startDate}&checkout=${endDate}&adults=2&currency=EUR`;
                         window.open(bookingUrl, '_blank');
                         // Analytics tracking
-                        if (typeof gtag !== 'undefined') {
-                          gtag('event', 'booking_click', {
-                            'city': spot.name,
-                            'weather_score': spot.weatherScore
-                          });
-                        }
+console.log('Booking clicked:', spot.name, spot.weatherScore);
                       }}
                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
                     >
