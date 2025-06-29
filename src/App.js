@@ -21,13 +21,15 @@ const SonnensucheApp = () => {
 
   // PWA Installation + iOS Detection
   useEffect(() => {
-    // iOS Detection
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    // iOS Detection - verbesserte Erkennung
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     setIsIOS(iOS);
     
     // Show iOS install instructions if not already installed
     if (iOS && !window.navigator.standalone) {
       setShowIOSInstruct(true);
+      setShowInstallPrompt(true); // Force show button on iOS
     }
 
     const handleBeforeInstallPrompt = (e) => {
@@ -51,6 +53,7 @@ const SonnensucheApp = () => {
 
   const handleIOSInstall = () => {
     setShowIOSInstruct(!showIOSInstruct);
+    console.log('iOS Install clicked', { isIOS, showIOSInstruct });
   };
 
   // Geocoding: Ortsname zu Koordinaten
