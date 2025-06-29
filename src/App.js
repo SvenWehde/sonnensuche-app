@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Sun, Thermometer, Calendar, Search, Loader2, Settings, Eye, EyeOff, Star, Navigation, Clock } from 'lucide-react';
+import { MapPin, Sun, Thermometer, Calendar, Search, Loader2, Settings, Eye, EyeOff, Star, Navigation, Clock, Download } from 'lucide-react';
 
 const SonnensucheApp = () => {
   const [location, setLocation] = useState('');
@@ -14,6 +14,29 @@ const SonnensucheApp = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [error, setError] = useState('');
   const [searchType, setSearchType] = useState('sonnenschein');
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  // PWA Installation
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallPrompt(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+      setShowInstallPrompt(false);
+    }
+  };
 
   // Geocoding: Ortsname zu Koordinaten
   const geocodeLocation = async (locationName) => {
@@ -40,7 +63,6 @@ const SonnensucheApp = () => {
 
   // Generiere Koordinaten im Umkreis
   const generateLocationGrid = (centerLat, centerLon, radiusKm, gridSize = 12) => {
-    const locations = [];
     const points = [];
     
     // Generiere Punkte in verschiedenen Entfernungen und Richtungen
@@ -82,10 +104,11 @@ const SonnensucheApp = () => {
       // Analysiere Wetterdaten für den gewählten Zeitraum
       const startDateTime = new Date(startDate).getTime();
       const endDateTime = new Date(endDate).getTime() + (24 * 60 * 60 * 1000); // Ende des Tages
+      const totalDays = Math.ceil((endDateTime - startDateTime) / (24 * 60 * 60 * 1000));
       
       let totalTemp = 0;
       let maxTemp = -100;
-      let sunnyHours = 0;
+      let dailySunHours = 0;
       let validReadings = 0;
       let rainHours = 0;
       
@@ -100,7 +123,7 @@ const SonnensucheApp = () => {
           // Sonnenstunden basierend auf Bewölkung schätzen
           const cloudiness = reading.clouds.all;
           const sunFactor = Math.max(0, (100 - cloudiness) / 100);
-          sunnyHours += sunFactor * 3; // 3-Stunden Intervalle
+          dailySunHours += sunFactor * 3; // 3-Stunden Intervalle
           
           // Regenstunden
           if (reading.rain && reading.rain['3h'] > 0) {
@@ -114,14 +137,15 @@ const SonnensucheApp = () => {
       }
       
       const avgTemp = totalTemp / validReadings;
-      const estimatedSunHours = sunnyHours / (validReadings / 8); // Pro Tag
-      const estimatedRainHours = rainHours / (validReadings / 8); // Pro Tag
+      // Korrekte Durchschnitts-Berechnung: Sonnenstunden pro Tag
+      const avgSunHoursPerDay = Math.min(12, dailySunHours / totalDays); // Maximum 12h pro Tag
+      const avgRainHoursPerDay = rainHours / totalDays;
       
       // Wetter-Score berechnen basierend auf Suchtyp
       let weatherScore;
       if (searchType === 'sonnenschein') {
         const tempScore = Math.max(0, Math.min(100, (avgTemp + 10) * 2.5)); // -10°C = 0%, 30°C = 100%
-        const sunScore = Math.max(0, Math.min(100, (estimatedSunHours / 12) * 100)); // 12h = 100%
+        const sunScore = Math.max(0, Math.min(100, (avgSunHoursPerDay / 12) * 100)); // 12h = 100%
         weatherScore = Math.round(tempScore * 0.6 + sunScore * 0.4);
       } else { // schnee
         const tempScore = Math.max(0, Math.min(100, (10 - avgTemp) * 10)); // Kälter = besser für Schnee
@@ -132,12 +156,13 @@ const SonnensucheApp = () => {
       return {
         avgTemp: Math.round(avgTemp * 10) / 10,
         maxTemp: Math.round(maxTemp * 10) / 10,
-        sunHours: Math.round(estimatedSunHours * 10) / 10,
-        rainHours: Math.round(estimatedRainHours * 10) / 10,
+        sunHours: Math.round(avgSunHoursPerDay * 10) / 10,
+        rainHours: Math.round(avgRainHoursPerDay * 10) / 10,
         weatherScore: weatherScore,
         cityName: data.city.name,
+        totalDays: totalDays,
         forecast: searchType === 'sonnenschein' 
-          ? (avgTemp > 20 && estimatedSunHours > 6 ? 'Sonnig' : avgTemp > 15 ? 'Bewölkt' : 'Bedeckt')
+          ? (avgTemp > 20 && avgSunHoursPerDay > 6 ? 'Sonnig' : avgTemp > 15 ? 'Bewölkt' : 'Bedeckt')
           : (avgTemp < 0 ? 'Schnee' : avgTemp < 5 ? 'Frost' : 'Mild')
       };
     } catch (error) {
@@ -209,7 +234,8 @@ const SonnensucheApp = () => {
             rainHours: weather.rainHours,
             weatherScore: weather.weatherScore,
             distance: point.distance,
-            forecast: weather.forecast
+            forecast: weather.forecast,
+            totalDays: weather.totalDays
           };
         }
         return null;
@@ -284,28 +310,50 @@ const SonnensucheApp = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-400 p-4">
-      <div className="max-w-4xl mx-auto">
+      {/* AdSense - Sticky Banner */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-100 border-t border-gray-200 p-2 text-center text-xs z-50">
+        <span className="text-gray-600">Werbung</span>
+        <div className="bg-gray-200 h-12 flex items-center justify-center text-gray-500 rounded mt-1">
+          [Google AdSense Banner 320x50]
+        </div>
+        <button className="absolute top-1 right-1 text-gray-400 hover:text-gray-600" onClick={() => document.querySelector('.fixed.bottom-0').style.display = 'none'}>×</button>
+      </div>
+
+      <div className="max-w-4xl mx-auto pb-20">
         {/* Header im Sonnensuche-Stil */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="relative">
-              <Sun className="text-yellow-300 animate-pulse" size={50} />
+              <Sun className="text-yellow-300 animate-pulse" size={60} />
               <div className="absolute -inset-2 bg-yellow-200 rounded-full opacity-20 animate-ping"></div>
             </div>
             <div>
               <h1 className="text-5xl font-bold text-white drop-shadow-lg">Sonnensuche</h1>
               <p className="text-yellow-100 text-lg font-medium">www.sonnensuche.com</p>
             </div>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-3 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors"
-              title="API-Einstellungen"
-            >
-              <Settings size={24} />
-            </button>
+            <div className="flex gap-2">
+              {showInstallPrompt && (
+                <button
+                  onClick={handleInstallClick}
+                  className="p-3 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors text-sm"
+                  title="App kostenlos installieren"
+                >
+                  <Download size={20} />
+                  <span className="hidden md:inline ml-1">Kostenlos installieren</span>
+                </button>
+              )}
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-3 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors"
+                title="API-Einstellungen"
+              >
+                <Settings size={24} />
+              </button>
+            </div>
           </div>
-          <p className="text-white text-lg drop-shadow">Die erste App, die nach dem Wetter sucht, das du dir wünschst!</p>
-          <p className="text-yellow-100 mt-2">Für alle spontanen Urlauber und Ausflügler</p>
+          <p className="text-white text-xl drop-shadow font-semibold">Die erste App, die nach den Orten mit dem besten Wetter sucht</p>
+          <p className="text-yellow-100 mt-2 text-lg font-bold">Für alle spontanen Urlauber und Ausflügler</p>
+          <p className="text-yellow-200 mt-1 text-sm">5-Tage Wettervorhersage • Präzise Prognosen</p>
         </div>
 
         {/* API-Key Einstellungen */}
@@ -359,6 +407,14 @@ const SonnensucheApp = () => {
             <strong>Fehler:</strong> {error}
           </div>
         )}
+
+        {/* AdSense - Banner über Suchformular */}
+        <div className="mb-6 p-4 bg-white/90 rounded-lg text-center">
+          <span className="text-xs text-gray-500">Gesponserte Angebote</span>
+          <div className="bg-gray-200 h-24 flex items-center justify-center text-gray-500 rounded mt-2">
+            [Google AdSense Banner 728x90]
+          </div>
+        </div>
 
         {/* Suchformular im Sonnensuche-Design */}
         <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 mb-8">
@@ -465,6 +521,16 @@ const SonnensucheApp = () => {
             </div>
           </div>
 
+          {/* AdSense - Loading Screen Integration */}
+          {loading && (
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg text-center">
+              <span className="text-xs text-blue-600">Gesponsert - Während du wartest</span>
+              <div className="bg-blue-100 h-20 flex items-center justify-center text-blue-500 rounded mt-2">
+                [Google AdSense Interstitial]
+              </div>
+            </div>
+          )}
+
           <button
             onClick={handleSearch}
             disabled={loading || !apiKey.trim()}
@@ -485,171 +551,75 @@ const SonnensucheApp = () => {
           </button>
         </div>
 
-        {/* Ergebnisse im Sonnensuche-Stil */}
+        {/* AdSense - Banner vor Ergebnissen */}
         {results.length > 0 && (
-          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">
-              🏆 Die Top {results.length} Ergebnisse
-            </h2>
-            <p className="text-center text-gray-600 mb-6">
-              Orte mit dem {searchType === 'sonnenschein' ? 'schönsten Sonnenwetter' : 'besten Schneewetter'} für deinen Ausflug
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {results.slice(0, 8).map((spot, index) => (
-                <div
-                  key={spot.id}
-                  className={`p-5 rounded-xl border-2 transition-all hover:shadow-lg transform hover:scale-105 ${
-                    index === 0 
-                      ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50 shadow-md' 
-                      : 'border-gray-200 bg-gradient-to-br from-gray-50 to-blue-50'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-xl text-gray-800 flex items-center gap-2 mb-1">
-                        {index === 0 && '👑'}
-                        <span className="text-2xl">{index + 1}</span>
-                        {spot.name}
-                        <span className="text-3xl">{getWeatherIcon(spot.forecast, searchType)}</span>
-                      </h3>
-                      <p className="text-sm text-gray-600 flex items-center gap-1">
-                        <MapPin size={14} />
-                        {spot.distance} km entfernt
-                      </p>
-                    </div>
-                    <div className={`px-4 py-2 rounded-full text-sm font-bold shadow-sm ${getScoreColor(spot.weatherScore)}`}>
-                      <Star size={14} className="inline mr-1" />
-                      {spot.weatherScore}%
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-3">
-                    <div className="flex items-center gap-2 bg-white/50 rounded-lg p-2">
-                      <Thermometer className="text-red-500" size={18} />
-                      <div>
-                        <div className="font-bold">{spot.temperature}°C</div>
-                        <div className="text-xs text-gray-600">Max: {spot.maxTemp}°C</div>
-                      </div>
-                    </div>
-                    {searchType === 'sonnenschein' ? (
-                      <div className="flex items-center gap-2 bg-white/50 rounded-lg p-2">
-                        <Sun className="text-yellow-500" size={18} />
-                        <div>
-                          <div className="font-bold">{spot.sunHours}h</div>
-                          <div className="text-xs text-gray-600">Sonnenschein</div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 bg-white/50 rounded-lg p-2">
-                        <div className="text-blue-500 text-lg">❄️</div>
-                        <div>
-                          <div className="font-bold">{spot.forecast}</div>
-                          <div className="text-xs text-gray-600">Wetter</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="text-sm bg-white/70 rounded-lg p-2 mb-3">
-                    <strong>Vorhersage:</strong> <span className="font-medium">{spot.forecast}</span>
-                    {searchType === 'sonnenschein' && spot.rainHours > 0 && (
-                      <span className="text-blue-600 ml-2">({spot.rainHours}h Regen)</span>
-                    )}
-                  </div>
-
-                  {/* Booking.com Affiliate Integration */}
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => {
-                        const bookingUrl = `https://www.booking.com/searchresults.html?aid=12345678&label=sonnensuche&dest_type=city&ss=${encodeURIComponent(spot.name)}&checkin=${startDate}&checkout=${endDate}&adults=2&currency=EUR`;
-                        window.open(bookingUrl, '_blank');
-                        // Analytics tracking
-console.log('Booking clicked:', spot.name, spot.weatherScore);
-                      }}
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
-                    >
-                      🏨 Unterkunft in {spot.name} finden
-                      <span className="text-sm opacity-90">→ ab 29€</span>
-                    </button>
-                    
-                    {spot.weatherScore > 80 && (
-                      <div className="p-2 bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-lg text-center text-sm">
-                        <span className="font-bold">🎉 Perfektes Wetter!</span> Jetzt beste Angebote sichern
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => window.open(`https://www.airbnb.de/s/${encodeURIComponent(spot.name)}?checkin=${startDate}&checkout=${endDate}&adults=2`, '_blank')}
-                        className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-3 rounded text-sm transition-colors"
-                      >
-                        🏠 Airbnb
-                      </button>
-                      <button
-                        onClick={() => window.open(`https://de.hotels.com/search.do?destination=${encodeURIComponent(spot.name)}&startDate=${startDate}&endDate=${endDate}`, '_blank')}
-                        className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-3 rounded text-sm transition-colors"
-                      >
-                        🏨 Hotels.com
-                      </button>
-                    </div>
-                    
-                    <p className="text-xs text-gray-500 text-center">
-                      ⭐ Bei Buchung über unsere Partner unterstützt du Sonnensuche.com
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 p-6 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl">
-              <h3 className="text-xl font-bold mb-2">✅ Echte Live-Wetterdaten von OpenWeatherMap</h3>
-              <p className="text-green-100">
-                Diese Ergebnisse basieren auf aktuellen 5-Tage-Wettervorhersagen und helfen dir dabei, 
-                spontane Ausflüge und Kurzurlaube perfekt zu planen!
-              </p>
-            </div>
-
-            {/* Booking.com Integration Hinweis */}
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <strong>💡 Tipp:</strong> Unterkunft gefunden? Buche direkt über unsere Partner-Links 
-                und unterstütze die Weiterentwicklung von Sonnensuche.com!
-              </p>
+          <div className="mb-6 p-4 bg-white/90 rounded-lg text-center">
+            <span className="text-xs text-gray-500">Gesponserte Angebote</span>
+            <div className="bg-gray-200 h-24 flex items-center justify-center text-gray-500 rounded mt-2">
+              [Google AdSense Banner 728x90]
             </div>
           </div>
         )}
 
-        {/* Footer im Sonnensuche-Stil */}
-        <div className="mt-8 bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600 text-white rounded-xl p-6">
-          <h3 className="text-2xl font-bold mb-4 text-center">🌦 Sonnensuche.com - Die Revolution der Wettersuche</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-            <div className="text-center">
-              <div className="bg-white bg-opacity-20 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                <Search size={20} />
-              </div>
-              <h4 className="font-bold mb-2">Nie wieder im Regen stehen</h4>
-              <p>Suche nach dem Wetter, das du dir wünschst - nicht nach Orten!</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-white bg-opacity-20 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                <MapPin size={20} />
-              </div>
-              <h4 className="font-bold mb-2">Perfekt für spontane Ausflügler</h4>
-              <p>Perfekt für Kurzreisen, Camping und Outdoor-Abenteuer</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-white bg-opacity-20 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                <Star size={20} />
-              </div>
-              <h4 className="font-bold mb-2">Intelligentes Ranking</h4>
-              <p>KI-basierte Bewertung für die besten Wetter-Spots in deiner Nähe</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+        {/* Ergebnisse im Sonnensuche-Stil */}
+        {results.length > 0 && (
+          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6">
+            <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">
+              Deine Top Ergebnisse
+            </h2>
+            <p className="text-center text-gray-600 mb-6">
+              Orte mit dem schönsten Wetter für deinen Urlaub oder Ausflug
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {results.slice(0, 12).map((spot, index) => (
+                <div key={spot.id}>
+                  <div
+                    className={`p-5 rounded-xl border-2 transition-all hover:shadow-lg transform hover:scale-105 ${
+                      index === 0 
+                        ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50 shadow-md' 
+                        : 'border-gray-200 bg-gradient-to-br from-gray-50 to-blue-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-xl text-gray-800 flex items-center gap-2 mb-1">
+                          {index === 0 && '👑'}
+                          <span className="text-2xl">{index + 1}</span>
+                          {spot.name}
+                          <span className="text-3xl">{getWeatherIcon(spot.forecast, searchType)}</span>
+                        </h3>
+                        <p className="text-sm text-gray-600 flex items-center gap-1">
+                          <MapPin size={14} />
+                          {spot.distance} km entfernt
+                        </p>
+                      </div>
+                      <div className={`px-4 py-2 rounded-full text-sm font-bold shadow-sm ${getScoreColor(spot.weatherScore)}`}>
+                        <Star size={14} className="inline mr-1" />
+                        {spot.weatherScore}%
+                      </div>
+                    </div>
 
-export default SonnensucheApp;
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div className="flex items-center gap-2 bg-white/50 rounded-lg p-2">
+                        <Thermometer className="text-red-500" size={18} />
+                        <div>
+                          <div className="font-bold">{spot.temperature}°C</div>
+                          <div className="text-xs text-gray-600">Max: {spot.maxTemp}°C</div>
+                        </div>
+                      </div>
+                      {searchType === 'sonnenschein' ? (
+                        <div className="flex items-center gap-2 bg-white/50 rounded-lg p-2">
+                          <Sun className="text-yellow-500" size={18} />
+                          <div>
+                            <div className="font-bold">{spot.sunHours}h</div>
+                            <div className="text-xs text-gray-600">
+                              {spot.totalDays > 1 ? 'Sonne pro Tag' : 'Sonnenschein'}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 bg-white/50 rounded-lg p-2">
+                          <div className="text-blue-500 text-lg">❄️</div>
+                          <div>
+                            <div className="font-bold">{spot.forecast}</div>
