@@ -16,9 +16,20 @@ const SonnensucheApp = () => {
   const [searchType, setSearchType] = useState('sonnenschein');
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [showIOSInstruct, setShowIOSInstruct] = useState(false);
 
-  // PWA Installation
+  // PWA Installation + iOS Detection
   useEffect(() => {
+    // iOS Detection
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(iOS);
+    
+    // Show iOS install instructions if not already installed
+    if (iOS && !window.navigator.standalone) {
+      setShowIOSInstruct(true);
+    }
+
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -36,6 +47,10 @@ const SonnensucheApp = () => {
       setDeferredPrompt(null);
       setShowInstallPrompt(false);
     }
+  };
+
+  const handleIOSInstall = () => {
+    setShowIOSInstruct(!showIOSInstruct);
   };
 
   // Geocoding: Ortsname zu Koordinaten
@@ -315,9 +330,9 @@ const SonnensucheApp = () => {
               <p className="text-yellow-100 text-lg font-medium">www.sonnensuche.com</p>
             </div>
             <div className="flex gap-2">
-              {showInstallPrompt && (
+              {(showInstallPrompt || isIOS) && (
                 <button
-                  onClick={handleInstallClick}
+                  onClick={isIOS ? handleIOSInstall : handleInstallClick}
                   className="p-3 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors text-sm flex items-center gap-2"
                   title="App kostenlos installieren"
                 >
@@ -550,16 +565,25 @@ const SonnensucheApp = () => {
             </p>
 
             {/* PWA Installation - Nach der ersten Suche */}
-            {showInstallPrompt && (
+            {(showInstallPrompt || (isIOS && showIOSInstruct)) && (
               <div className="mb-6 p-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl text-center">
                 <h3 className="text-lg font-bold mb-2">📲 Sonnensuche kostenlos installieren</h3>
                 <p className="text-green-100 text-sm mb-3">Für schnelleren Zugriff auf dein Handy - ohne App Store!</p>
-                <button
-                  onClick={handleInstallClick}
-                  className="bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-50 transition-colors"
-                >
-                  📱 Jetzt kostenlos installieren
-                </button>
+                {isIOS ? (
+                  <button
+                    onClick={handleIOSInstall}
+                    className="bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-50 transition-colors"
+                  >
+                    📱 iPhone Anleitung anzeigen
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleInstallClick}
+                    className="bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-50 transition-colors"
+                  >
+                    📱 Jetzt kostenlos installieren
+                  </button>
+                )}
               </div>
             )}
             
