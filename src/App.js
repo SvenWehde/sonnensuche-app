@@ -323,32 +323,33 @@ const SonnensucheApp = () => {
 
       <div className="max-w-4xl mx-auto pb-20">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="relative">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="relative ml-4 md:ml-0">
               <Sun className="text-yellow-300 animate-pulse" size={60} />
               <div className="absolute -inset-2 bg-yellow-200 rounded-full opacity-20 animate-ping"></div>
             </div>
-            <div>
+            <div className="flex-1 text-center">
               <h1 className="text-5xl font-bold text-white drop-shadow-lg">Sonnensuche</h1>
               <p className="text-yellow-100 text-lg font-medium">www.sonnensuche.com</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-1 min-w-[80px]">
               {(showInstallPrompt || isIOS) && (
                 <button
                   onClick={isIOS ? handleIOSInstall : handleInstallClick}
-                  className="p-3 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors text-sm flex items-center gap-2"
+                  className="p-2 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors text-xs flex flex-col items-center"
                   title="App kostenlos installieren"
                 >
-                  <Download size={20} />
-                  <span className="hidden lg:inline">Kostenlos installieren</span>
+                  <Download size={16} />
+                  <span className="text-xs mt-1">App</span>
                 </button>
               )}
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="p-3 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors flex flex-col items-center"
                 title="API-Einstellungen"
               >
-                <Settings size={24} />
+                <Settings size={16} />
+                <span className="text-xs mt-1">Settings</span>
               </button>
             </div>
           </div>
