@@ -318,11 +318,11 @@ const SonnensucheApp = () => {
               {showInstallPrompt && (
                 <button
                   onClick={handleInstallClick}
-                  className="p-3 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors text-sm"
+                  className="p-3 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors text-sm flex items-center gap-2"
                   title="App kostenlos installieren"
                 >
                   <Download size={20} />
-                  <span className="hidden md:inline ml-1">Kostenlos installieren</span>
+                  <span className="hidden lg:inline">Kostenlos installieren</span>
                 </button>
               )}
               <button
@@ -336,7 +336,6 @@ const SonnensucheApp = () => {
           </div>
           <p className="text-white text-xl drop-shadow font-semibold">Die erste App, die nach den Orten mit dem besten Wetter sucht</p>
           <p className="text-yellow-100 mt-2 text-lg font-bold">Für alle spontanen Urlauber und Ausflügler</p>
-          <p className="text-yellow-200 mt-1 text-sm">5-Tage Wettervorhersage • Präzise Prognosen</p>
         </div>
 
         {showSettings && (
@@ -431,8 +430,8 @@ const SonnensucheApp = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="md:col-span-2 lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <MapPin size={16} className="inline mr-1" />
                 Von wo startest du?
@@ -447,7 +446,7 @@ const SonnensucheApp = () => {
                 />
                 <button
                   onClick={getCurrentLocation}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
                   title="Aktuellen Standort verwenden"
                 >
                   <Navigation size={18} />
@@ -455,7 +454,7 @@ const SonnensucheApp = () => {
               </div>
             </div>
 
-            <div>
+            <div className="md:col-span-2 lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Wie weit bist du bereit zu fahren? ({radius} km)
               </label>
@@ -472,7 +471,7 @@ const SonnensucheApp = () => {
               </div>
             </div>
 
-            <div>
+            <div className="md:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Calendar size={16} className="inline mr-1" />
                 Wann möchtest du los?
@@ -485,7 +484,7 @@ const SonnensucheApp = () => {
               />
             </div>
 
-            <div>
+            <div className="md:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Clock size={16} className="inline mr-1" />
                 Bis wann?
@@ -507,6 +506,10 @@ const SonnensucheApp = () => {
               </div>
             </div>
           )}
+
+          <p className="text-center text-blue-600 mb-4 font-medium">
+            📅 5-Tage Wettervorhersage • Präzise Prognosen
+          </p>
 
           <button
             onClick={handleSearch}
@@ -545,6 +548,20 @@ const SonnensucheApp = () => {
             <p className="text-center text-gray-600 mb-6">
               Orte mit dem schönsten Wetter für deinen Urlaub oder Ausflug
             </p>
+
+            {/* PWA Installation - Nach der ersten Suche */}
+            {showInstallPrompt && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl text-center">
+                <h3 className="text-lg font-bold mb-2">📲 Sonnensuche kostenlos installieren</h3>
+                <p className="text-green-100 text-sm mb-3">Für schnelleren Zugriff auf dein Handy - ohne App Store!</p>
+                <button
+                  onClick={handleInstallClick}
+                  className="bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-50 transition-colors"
+                >
+                  📱 Jetzt kostenlos installieren
+                </button>
+              </div>
+            )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {results.slice(0, 12).map((spot, index) => (
