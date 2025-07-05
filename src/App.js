@@ -558,7 +558,7 @@ const SonnensucheApp = () => {
               >
                 <Download size={24} />
                 <Sun size={24} className="text-yellow-300 animate-pulse" />
-                {isIOS ? 'iPhone Installationsanleitung' : 'Jetzt kostenlos installieren'}
+                {isIOS ? 'iPhone Installationsanleitung anzeigen' : 'Jetzt kostenlos installieren'}
                 <Sun size={24} className="text-yellow-300 animate-pulse" />
               </button>
               
@@ -566,6 +566,32 @@ const SonnensucheApp = () => {
                 ✅ Kostenlos • ✅ Ohne App Store • ✅ Funktioniert offline
               </p>
             </div>
+
+            {/* iOS Installation Instructions */}
+            {isIOS && showIOSInstruct && (
+              <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <h4 className="font-bold text-blue-800 mb-3 text-center">📲 So installierst du Sonnensuche auf dein iPhone:</h4>
+                <div className="space-y-3 text-sm text-blue-700">
+                  <div className="flex items-start gap-3">
+                    <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                    <p>Tippe auf das <strong>Teilen-Symbol</strong> unten in Safari (Quadrat mit Pfeil nach oben) 📤</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                    <p>Scrolle runter und wähle <strong>"Zum Home-Bildschirm hinzufügen"</strong> 📱</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                    <p>Tippe auf <strong>"Hinzufügen"</strong> - fertig! 🎉</p>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-green-100 rounded-lg border border-green-200">
+                  <p className="text-green-800 text-xs text-center">
+                    ✅ Die Sonnensuche-App erscheint dann als Icon auf deinem Home-Bildschirm!
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
