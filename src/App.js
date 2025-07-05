@@ -332,26 +332,14 @@ const SonnensucheApp = () => {
               <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg">Sonnensuche</h1>
               <p className="text-yellow-100 text-sm md:text-lg font-medium">www.sonnensuche.com</p>
             </div>
-            <div className="flex flex-col gap-1 flex-shrink-0">
-              {(showInstallPrompt || isIOS) && (
-                <button
-                  onClick={isIOS ? handleIOSInstall : handleInstallClick}
-                  className="p-1.5 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors text-xs flex flex-col items-center min-w-[50px]"
-                  title="App kostenlos installieren"
-                >
-                  <Download size={14} />
-                  <span className="text-xs">App</span>
-                </button>
-              )}
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="p-1.5 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors flex flex-col items-center min-w-[50px]"
-                title="API-Einstellungen"
-              >
-                <Settings size={14} />
-                <span className="text-xs">Set</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-1.5 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors flex flex-col items-center min-w-[50px] flex-shrink-0"
+              title="API-Einstellungen"
+            >
+              <Settings size={14} />
+              <span className="text-xs">Set</span>
+            </button>
           </div>
           <p className="text-white text-xl drop-shadow font-semibold">Die erste App, die nach den Orten mit dem besten Wetter sucht</p>
           <p className="text-yellow-100 mt-2 text-lg font-bold">Für alle spontanen Urlauber und Ausflügler</p>
@@ -550,6 +538,37 @@ const SonnensucheApp = () => {
           </button>
         </div>
 
+        {/* PWA Download Button - Prominent placement */}
+        {(showInstallPrompt || isIOS) && (
+          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
+            <div className="text-center">
+              <div className="relative inline-block mb-4">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-full p-4 shadow-lg">
+                  <Sun className="text-yellow-300 animate-pulse" size={32} />
+                </div>
+                <div className="absolute -inset-2 bg-blue-200 rounded-full opacity-30 animate-ping"></div>
+              </div>
+              
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">📱 Sonnensuche-App kostenlos downloaden</h3>
+              <p className="text-gray-600 mb-4">Installiere die App auf deinem Handy für schnelleren Zugriff - ohne App Store!</p>
+              
+              <button
+                onClick={isIOS ? handleIOSInstall : handleInstallClick}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-3 text-lg"
+              >
+                <Download size={24} />
+                <Sun size={24} className="text-yellow-300 animate-pulse" />
+                {isIOS ? 'iPhone Installationsanleitung' : 'Jetzt kostenlos installieren'}
+                <Sun size={24} className="text-yellow-300 animate-pulse" />
+              </button>
+              
+              <p className="text-sm text-gray-500 mt-3">
+                ✅ Kostenlos • ✅ Ohne App Store • ✅ Funktioniert offline
+              </p>
+            </div>
+          </div>
+        )}
+
         {results.length > 0 && (
           <div className="mb-6 p-4 bg-white/90 rounded-lg text-center">
             <span className="text-xs text-gray-500">Gesponserte Angebote</span>
@@ -567,29 +586,6 @@ const SonnensucheApp = () => {
             <p className="text-center text-gray-600 mb-6">
               Orte mit dem schönsten Wetter für deinen Urlaub oder Ausflug
             </p>
-
-            {/* PWA Installation - Nach der ersten Suche */}
-            {(showInstallPrompt || (isIOS && showIOSInstruct)) && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl text-center">
-                <h3 className="text-lg font-bold mb-2">📲 Sonnensuche kostenlos installieren</h3>
-                <p className="text-green-100 text-sm mb-3">Für schnelleren Zugriff auf dein Handy - ohne App Store!</p>
-                {isIOS ? (
-                  <button
-                    onClick={handleIOSInstall}
-                    className="bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-50 transition-colors"
-                  >
-                    📱 iPhone Anleitung anzeigen
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleInstallClick}
-                    className="bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-50 transition-colors"
-                  >
-                    📱 Jetzt kostenlos installieren
-                  </button>
-                )}
-              </div>
-            )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {results.slice(0, 12).map((spot, index) => (
@@ -707,19 +703,6 @@ const SonnensucheApp = () => {
                 </div>
               ))}
             </div>
-
-            {showInstallPrompt && (
-              <div className="mt-8 p-6 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl text-center">
-                <h3 className="text-xl font-bold mb-2">📲 Sonnensuche kostenlos installieren</h3>
-                <p className="text-green-100 mb-4">Für schnelleren Zugriff auf dein Handy - ohne App Store!</p>
-                <button
-                  onClick={handleInstallClick}
-                  className="bg-white text-green-600 font-bold py-3 px-6 rounded-lg hover:bg-green-50 transition-colors transform hover:scale-105"
-                >
-                  📱 Jetzt kostenlos installieren
-                </button>
-              </div>
-            )}
 
             <div className="mt-8 p-6 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl">
               <h3 className="text-xl font-bold mb-2">✅ Echte Live-Wetterdaten von OpenWeatherMap</h3>
