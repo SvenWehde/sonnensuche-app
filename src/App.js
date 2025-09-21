@@ -56,11 +56,11 @@ const SonnensucheApp = () => {
     console.log('iOS Install clicked', { isIOS, showIOSInstruct });
   };
 
-  // Geocoding: Ortsname zu Koordinaten
+  // Geocoding: Ortsname zu Koordinaten - Verbessert für größere Städte
   const geocodeLocation = async (locationName) => {
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)}&limit=1&appid=${apiKey}`
+        `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)}&limit=5&appid=${apiKey}`
       );
       const data = await response.json();
       
@@ -68,26 +68,57 @@ const SonnensucheApp = () => {
         throw new Error('Ort nicht gefunden');
       }
       
+      // Priorisiere größere Städte und bekannte Orte
+      const sortedResults = data.sort((a, b) => {
+        // Bekannte Städte bevorzugen
+        const knownCities = [
+          'Berlin', 'Hamburg', 'München', 'Köln', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 
+          'Leipzig', 'Dortmund', 'Essen', 'Bremen', 'Dresden', 'Hannover', 'Nürnberg',
+          'Duisburg', 'Bochum', 'Wuppertal', 'Bielefeld', 'Bonn', 'Münster', 'Mannheim',
+          'Augsburg', 'Wiesbaden', 'Mönchengladbach', 'Gelsenkirchen', 'Aachen', 'Braunschweig',
+          'Chemnitz', 'Kiel', 'Krefeld', 'Halle', 'Magdeburg', 'Freiburg', 'Oberhausen',
+          'Lübeck', 'Erfurt', 'Rostock', 'Kassel', 'Hagen', 'Potsdam', 'Saarbrücken'
+        ];
+        
+        const aIsKnown = knownCities.some(city => a.name.toLowerCase().includes(city.toLowerCase()));
+        const bIsKnown = knownCities.some(city => b.name.toLowerCase().includes(city.toLowerCase()));
+        
+        if (aIsKnown && !bIsKnown) return -1;
+        if (!aIsKnown && bIsKnown) return 1;
+        
+        // Bei gleicher "Bekanntheit" nach Population sortieren (falls vorhanden)
+        if (a.population && b.population) {
+          return b.population - a.population;
+        }
+        
+        return 0;
+      });
+      
+      const bestResult = sortedResults[0];
       return {
-        lat: data[0].lat,
-        lon: data[0].lon,
-        name: data[0].name,
-        country: data[0].country
+        lat: bestResult.lat,
+        lon: bestResult.lon,
+        name: bestResult.name,
+        country: bestResult.country
       };
     } catch (error) {
       throw new Error(`Geocoding fehler: ${error.message}`);
     }
   };
 
-  // Generiere Koordinaten im Umkreis
-  const generateLocationGrid = (centerLat, centerLon, radiusKm, gridSize = 12) => {
+  // Generiere Koordinaten im Umkreis - Verbessert für größere Städte
+  const generateLocationGrid = (centerLat, centerLon, radiusKm, gridSize = 16) => {
     const points = [];
     
+    // Strategischere Verteilung der Suchpunkte
     for (let i = 0; i < gridSize; i++) {
       const angle = (i / gridSize) * 2 * Math.PI;
       
-      [0.3, 0.6, 1.0].forEach(distanceFactor => {
+      // Verschiedene Entfernungen testen - mehr Fokus auf mittlere Distanzen
+      [0.2, 0.4, 0.7, 1.0].forEach(distanceFactor => {
         const distance = radiusKm * distanceFactor;
+        
+        // Koordinaten berechnen
         const lat = centerLat + (distance / 111) * Math.cos(angle);
         const lon = centerLon + (distance / (111 * Math.cos(centerLat * Math.PI / 180))) * Math.sin(angle);
         
@@ -102,7 +133,7 @@ const SonnensucheApp = () => {
     return points;
   };
 
-  // Wetterdaten von OpenWeatherMap abrufen
+  // Wetterdaten von OpenWeatherMap abrufen - Verbesserte Logik
   const fetchWeatherData = async (lat, lon) => {
     try {
       const response = await fetch(
@@ -121,9 +152,9 @@ const SonnensucheApp = () => {
       
       let totalTemp = 0;
       let maxTemp = -100;
-      let dailySunHours = 0;
+      let totalCloudiness = 0;
+      let totalRainHours = 0;
       let validReadings = 0;
-      let rainHours = 0;
       
       data.list.forEach(reading => {
         const readingTime = reading.dt * 1000;
@@ -133,12 +164,12 @@ const SonnensucheApp = () => {
           totalTemp += reading.main.temp;
           maxTemp = Math.max(maxTemp, reading.main.temp);
           
-          const cloudiness = reading.clouds.all;
-          const sunFactor = Math.max(0, (100 - cloudiness) / 100);
-          dailySunHours += sunFactor * 3;
+          // Bewölkung sammeln
+          totalCloudiness += reading.clouds.all;
           
+          // Regen sammeln (realistisch)
           if (reading.rain && reading.rain['3h'] > 0) {
-            rainHours += 3;
+            totalRainHours += 3; // 3h pro Reading mit Regen
           }
         }
       });
@@ -148,14 +179,56 @@ const SonnensucheApp = () => {
       }
       
       const avgTemp = totalTemp / validReadings;
-      const avgSunHoursPerDay = Math.min(12, dailySunHours / totalDays);
-      const avgRainHoursPerDay = rainHours / totalDays;
+      const avgCloudiness = totalCloudiness / validReadings;
+      const avgRainHoursPerDay = totalRainHours / totalDays;
       
+      // Realistische Sonnenstunden-Berechnung
+      const maxPossibleSunHours = 12; // Maximum pro Tag
+      const sunFactor = Math.max(0, (100 - avgCloudiness) / 100);
+      let avgSunHoursPerDay = maxPossibleSunHours * sunFactor;
+      
+      // Reduziere Sonnenstunden wenn es regnet
+      if (avgRainHoursPerDay > 0) {
+        avgSunHoursPerDay = Math.max(0, avgSunHoursPerDay - (avgRainHoursPerDay * 0.7));
+      }
+      
+      // Stelle sicher, dass Sonne + Regen nicht über 24h gehen
+      const totalWeatherHours = avgSunHoursPerDay + avgRainHoursPerDay;
+      if (totalWeatherHours > 18) { // Max 18h "aktives" Wetter (6h neutral)
+        const factor = 18 / totalWeatherHours;
+        avgSunHoursPerDay *= factor;
+        avgRainHoursPerDay *= factor;
+      }
+      
+      // Konsistente Vorhersage basierend auf realen Werten
+      let forecast;
+      if (searchType === 'sonnenschein') {
+        if (avgRainHoursPerDay > 4) {
+          forecast = 'Regnerisch';
+        } else if (avgSunHoursPerDay > 7) {
+          forecast = 'Sonnig';
+        } else if (avgSunHoursPerDay > 4) {
+          forecast = 'Bewölkt';
+        } else {
+          forecast = 'Bedeckt';
+        }
+      } else {
+        if (avgTemp < 0) {
+          forecast = 'Schnee';
+        } else if (avgTemp < 5) {
+          forecast = 'Frost';
+        } else {
+          forecast = 'Mild';
+        }
+      }
+      
+      // Weather Score Berechnung
       let weatherScore;
       if (searchType === 'sonnenschein') {
         const tempScore = Math.max(0, Math.min(100, (avgTemp + 10) * 2.5));
         const sunScore = Math.max(0, Math.min(100, (avgSunHoursPerDay / 12) * 100));
-        weatherScore = Math.round(tempScore * 0.6 + sunScore * 0.4);
+        const rainPenalty = Math.min(30, avgRainHoursPerDay * 5); // Max -30 für Regen
+        weatherScore = Math.round(Math.max(0, tempScore * 0.6 + sunScore * 0.4 - rainPenalty));
       } else {
         const tempScore = Math.max(0, Math.min(100, (10 - avgTemp) * 10));
         const snowScore = avgTemp < 2 ? 80 : 20;
@@ -170,9 +243,7 @@ const SonnensucheApp = () => {
         weatherScore: weatherScore,
         cityName: data.city.name,
         totalDays: totalDays,
-        forecast: searchType === 'sonnenschein' 
-          ? (avgTemp > 20 && avgSunHoursPerDay > 6 ? 'Sonnig' : avgTemp > 15 ? 'Bewölkt' : 'Bedeckt')
-          : (avgTemp < 0 ? 'Schnee' : avgTemp < 5 ? 'Frost' : 'Mild')
+        forecast: forecast
       };
     } catch (error) {
       console.error('Wetter-API Fehler:', error);
@@ -196,6 +267,18 @@ const SonnensucheApp = () => {
       );
     } else {
       setError('Geolocation wird von diesem Browser nicht unterstützt');
+    }
+  };
+
+  // Hilfsfunktion: Richtung bestimmen
+  const getDirection = (lat1, lon1, lat2, lon2) => {
+    const deltaLat = lat1 - lat2;
+    const deltaLon = lon1 - lon2;
+    
+    if (Math.abs(deltaLat) > Math.abs(deltaLon)) {
+      return deltaLat > 0 ? 'Nördlich' : 'Südlich';
+    } else {
+      return deltaLon > 0 ? 'Östlich' : 'Westlich';
     }
   };
 
@@ -229,9 +312,44 @@ const SonnensucheApp = () => {
       const weatherPromises = locationGrid.map(async (point, index) => {
         const weather = await fetchWeatherData(point.lat, point.lon);
         if (weather) {
+          // Filter für bessere Ortsnamen - kleine/unbekannte Orte aussortieren
+          const cityName = weather.cityName || `Region ${index + 1}`;
+          
+          // Blacklist für sehr kleine/unbekannte Orte
+          const blacklistedTerms = [
+            'Hals', 'Siedlung', 'Weiler', 'Hof', 'Berg', 'Wald', 'Tal', 'Dorf',
+            'Klein', 'Groß', 'Ober', 'Unter', 'Nord', 'Süd', 'Ost', 'West'
+          ];
+          
+          // Überspringe Orte mit weniger als 4 Zeichen oder blacklisted terms
+          const isBlacklisted = blacklistedTerms.some(term => 
+            cityName.toLowerCase().includes(term.toLowerCase())
+          );
+          
+          if (cityName.length < 4 || isBlacklisted) {
+            // Verwende eine allgemeine Regionsbeschreibung statt unbekannter Ortsnamen
+            const direction = getDirection(point.lat, point.lon, centerCoords.lat, centerCoords.lon);
+            const newName = `${direction} von ${location}`;
+            
+            return {
+              id: index,
+              name: newName,
+              lat: point.lat.toFixed(4),
+              lon: point.lon.toFixed(4),
+              temperature: weather.avgTemp,
+              maxTemp: weather.maxTemp,
+              sunHours: weather.sunHours,
+              rainHours: weather.rainHours,
+              weatherScore: weather.weatherScore,
+              distance: point.distance,
+              forecast: weather.forecast,
+              totalDays: weather.totalDays
+            };
+          }
+          
           return {
             id: index,
-            name: weather.cityName || `Region ${index + 1}`,
+            name: cityName,
             lat: point.lat.toFixed(4),
             lon: point.lon.toFixed(4),
             temperature: weather.avgTemp,
@@ -395,23 +513,16 @@ const SonnensucheApp = () => {
           </div>
         )}
 
-        <div className="mb-6 p-4 bg-white/90 rounded-lg text-center">
-          <span className="text-xs text-gray-500">Gesponserte Angebote</span>
-          <div className="bg-gray-200 h-24 flex items-center justify-center text-gray-500 rounded mt-2">
-            [Google AdSense Banner 728x90]
-          </div>
-        </div>
-
         <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Was suchst du?</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <button
               onClick={() => setSearchType('sonnenschein')}
-              className={`p-6 rounded-xl transition-all transform hover:scale-105 ${
+              className={`p-6 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
                 searchType === 'sonnenschein' 
-                  ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white shadow-lg' 
-                  : 'bg-gradient-to-br from-yellow-100 to-orange-100 text-gray-700 hover:shadow-md'
+                  ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white shadow-lg border-2 border-yellow-600 shadow-yellow-200' 
+                  : 'bg-gradient-to-br from-yellow-100 to-orange-100 text-gray-700 hover:shadow-md border-2 border-transparent hover:border-yellow-300'
               }`}
             >
               <div className="text-center">
@@ -423,10 +534,10 @@ const SonnensucheApp = () => {
             
             <button
               onClick={() => setSearchType('schnee')}
-              className={`p-6 rounded-xl transition-all transform hover:scale-105 ${
+              className={`p-6 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
                 searchType === 'schnee' 
-                  ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white shadow-lg' 
-                  : 'bg-gradient-to-br from-blue-100 to-cyan-100 text-gray-700 hover:shadow-md'
+                  ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white shadow-lg border-2 border-blue-600 shadow-blue-200' 
+                  : 'bg-gradient-to-br from-blue-100 to-cyan-100 text-gray-700 hover:shadow-md border-2 border-transparent hover:border-blue-300'
               }`}
             >
               <div className="text-center">
@@ -538,8 +649,8 @@ const SonnensucheApp = () => {
           </button>
         </div>
 
-        {/* PWA Download Button - Prominent placement */}
-        {(showInstallPrompt || isIOS) && (
+        {/* PWA Download Button - Nur anzeigen wenn noch keine Ergebnisse da sind */}
+        {(showInstallPrompt || isIOS) && results.length === 0 && (
           <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
             <div className="text-center">
               <div className="relative inline-block mb-4">
@@ -752,6 +863,64 @@ const SonnensucheApp = () => {
                 und unterstütze die Weiterentwicklung von Sonnensuche.com!
               </p>
             </div>
+
+            {/* PWA Download Button - Nach den Ergebnissen */}
+            {(showInstallPrompt || isIOS) && (
+              <div className="mt-8 bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                <div className="text-center">
+                  <div className="relative inline-block mb-4">
+                    <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-full p-4 shadow-lg">
+                      <Sun className="text-yellow-300 animate-pulse" size={32} />
+                    </div>
+                    <div className="absolute -inset-2 bg-green-200 rounded-full opacity-30 animate-ping"></div>
+                  </div>
+                  
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">🎉 Perfekte Ergebnisse gefunden!</h3>
+                  <h4 className="text-xl font-bold text-gray-700 mb-2">📱 Jetzt Sonnensuche-App kostenlos installieren</h4>
+                  <p className="text-gray-600 mb-4">Für noch schnellere Wettersuchen in Zukunft - direkt vom Home-Bildschirm!</p>
+                  
+                  <button
+                    onClick={isIOS ? handleIOSInstall : handleInstallClick}
+                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-3 text-lg"
+                  >
+                    <Download size={24} />
+                    <Sun size={24} className="text-yellow-300 animate-pulse" />
+                    {isIOS ? 'iPhone Installationsanleitung anzeigen' : 'App jetzt installieren'}
+                    <Sun size={24} className="text-yellow-300 animate-pulse" />
+                  </button>
+                  
+                  <p className="text-sm text-gray-500 mt-3">
+                    ✅ Kostenlos • ✅ Ohne App Store • ✅ Funktioniert offline
+                  </p>
+                </div>
+
+                {/* iOS Installation Instructions */}
+                {isIOS && showIOSInstruct && (
+                  <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <h4 className="font-bold text-blue-800 mb-3 text-center">📲 So installierst du Sonnensuche auf dein iPhone:</h4>
+                    <div className="space-y-3 text-sm text-blue-700">
+                      <div className="flex items-start gap-3">
+                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                        <p>Tippe auf das <strong>Teilen-Symbol</strong> unten in Safari (Quadrat mit Pfeil nach oben) 📤</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                        <p>Scrolle runter und wähle <strong>"Zum Home-Bildschirm hinzufügen"</strong> 📱</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                        <p>Tippe auf <strong>"Hinzufügen"</strong> - fertig! 🎉</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 bg-green-100 rounded-lg border border-green-200">
+                      <p className="text-green-800 text-xs text-center">
+                        ✅ Die Sonnensuche-App erscheint dann als Icon auf deinem Home-Bildschirm!
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
