@@ -18,6 +18,10 @@ const SonnensucheApp = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstruct, setShowIOSInstruct] = useState(false);
+  const [logoClickCount, setLogoClickCount] = useState(0);
+
+  // Standard API-Key (kann über geheime Settings überschrieben werden)
+  const defaultApiKey = 'b0b755e584a3876179481c54767939f5'; // TODO: Ersetze mit deinem echten API-Key
 
   // PWA Installation + iOS Detection
   useEffect(() => {
@@ -56,11 +60,28 @@ const SonnensucheApp = () => {
     console.log('iOS Install clicked', { isIOS, showIOSInstruct });
   };
 
+  // Geheimer Settings-Zugang über Logo-Klicks
+  const handleLogoClick = () => {
+    const newCount = logoClickCount + 1;
+    setLogoClickCount(newCount);
+    
+    if (newCount >= 5) {
+      setShowSettings(true);
+      setLogoClickCount(0); // Reset
+      console.log('Secret admin access activated! 🔓');
+    }
+    
+    // Reset nach 3 Sekunden
+    setTimeout(() => {
+      if (newCount < 5) setLogoClickCount(0);
+    }, 3000);
+  };
+
   // Geocoding: Ortsname zu Koordinaten - Verbessert für größere Städte
-  const geocodeLocation = async (locationName) => {
+  const geocodeLocation = async (locationName, currentApiKey) => {
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)}&limit=5&appid=${apiKey}`
+        `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)}&limit=5&appid=${currentApiKey}`
       );
       const data = await response.json();
       
@@ -134,10 +155,10 @@ const SonnensucheApp = () => {
   };
 
   // Wetterdaten von OpenWeatherMap abrufen - Verbesserte Logik
-  const fetchWeatherData = async (lat, lon) => {
+  const fetchWeatherData = async (lat, lon, currentApiKey) => {
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=de`
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${currentApiKey}&units=metric&lang=de`
       );
       
       if (!response.ok) {
@@ -270,22 +291,110 @@ const SonnensucheApp = () => {
     }
   };
 
-  // Hilfsfunktion: Richtung bestimmen
-  const getDirection = (lat1, lon1, lat2, lon2) => {
-    const deltaLat = lat1 - lat2;
-    const deltaLon = lon1 - lon2;
-    
-    if (Math.abs(deltaLat) > Math.abs(deltaLon)) {
-      return deltaLat > 0 ? 'Nördlich' : 'Südlich';
-    } else {
-      return deltaLon > 0 ? 'Östlich' : 'Westlich';
+  // Bekannte Touristenorte (auch unter 2.500 EW akzeptabel)
+  const touristDestinations = [
+    'Timmendorfer Strand', 'Scharbeutz', 'Büsum', 'Sankt Peter-Ording',
+    'Heiligendamm', 'Binz', 'Sellin', 'Warnemünde', 'Travemünde',
+    'Sylt', 'Norderney', 'Borkum', 'Fehmarn', 'Rügen', 'Usedom',
+    'Grömitz', 'Dahme', 'Kellenhusen', 'Großenbrode', 'Burg auf Fehmarn',
+    'Glowe', 'Göhren', 'Baabe', 'Zingst', 'Prerow', 'Born', 'Dierhagen',
+    'Kühlungsborn', 'Rerik', 'Boltenhagen', 'Wismar', 'Stralsund'
+  ];
+
+  // Intelligente Ortsnamen-Suche
+  const findBestCityName = async (lat, lon, currentApiKey) => {
+    try {
+      // Reverse Geocoding für nahegelegene Orte
+      const response = await fetch(
+        `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=10&appid=${currentApiKey}`
+      );
+      const cities = await response.json();
+      
+      if (cities.length === 0) {
+        return null;
+      }
+      
+      // Nach Distanz sortieren (nächste zuerst)
+      const citiesWithDistance = cities.map(city => ({
+        ...city,
+        distance: calculateDistance(lat, lon, city.lat, city.lon)
+      })).sort((a, b) => a.distance - b.distance);
+      
+      // Suche nach akzeptabler Stadt
+      for (let city of citiesWithDistance) {
+        const cityName = city.name;
+        const distance = city.distance;
+        
+        // Sehr nah (≤10km) und bekannte Stadt → direkt verwenden
+        if (distance <= 10) {
+          // Ist es ein Touristenort? Dann immer OK
+          if (touristDestinations.some(dest => 
+            cityName.toLowerCase().includes(dest.toLowerCase()) || 
+            dest.toLowerCase().includes(cityName.toLowerCase())
+          )) {
+            return { name: cityName, distance };
+          }
+          
+          // Oder hat genug Einwohner? (falls API population liefert)
+          if (city.population && city.population >= 2500) {
+            return { name: cityName, distance };
+          }
+          
+          // Oder ist es eine bekannte deutsche Stadt?
+          const knownCities = [
+            'Berlin', 'Hamburg', 'München', 'Köln', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 
+            'Leipzig', 'Dortmund', 'Essen', 'Bremen', 'Dresden', 'Hannover', 'Nürnberg',
+            'Duisburg', 'Bochum', 'Wuppertal', 'Bielefeld', 'Bonn', 'Münster', 'Mannheim',
+            'Augsburg', 'Wiesbaden', 'Mönchengladbach', 'Gelsenkirchen', 'Aachen', 'Braunschweig',
+            'Chemnitz', 'Kiel', 'Krefeld', 'Halle', 'Magdeburg', 'Freiburg', 'Oberhausen',
+            'Lübeck', 'Erfurt', 'Rostock', 'Kassel', 'Hagen', 'Potsdam', 'Saarbrücken',
+            'Mainz', 'Ludwigshafen', 'Oldenburg', 'Leverkusen', 'Osnabrück', 'Solingen',
+            'Heidelberg', 'Herne', 'Neuss', 'Darmstadt', 'Regensburg', 'Ingolstadt',
+            'Würzburg', 'Fürth', 'Wolfsburg', 'Offenbach', 'Ulm', 'Heilbronn', 'Pforzheim',
+            'Göttingen', 'Bottrop', 'Trier', 'Recklinghausen', 'Reutlingen', 'Bremerhaven',
+            'Bergisch Gladbach', 'Jena', 'Remscheid', 'Erlangen', 'Moers', 'Siegen', 'Hildesheim',
+            'Salzgitter', 'Cottbus', 'Wismar', 'Stralsund', 'Greifswald', 'Schwerin', 'Neubrandenburg'
+          ];
+          
+          if (knownCities.some(knownCity => 
+            cityName.toLowerCase().includes(knownCity.toLowerCase()) ||
+            knownCity.toLowerCase().includes(cityName.toLowerCase())
+          )) {
+            return { name: cityName, distance };
+          }
+        }
+      }
+      
+      // Fallback: Nächste Stadt nehmen (auch wenn weiter weg)
+      return { 
+        name: citiesWithDistance[0].name, 
+        distance: citiesWithDistance[0].distance 
+      };
+      
+    } catch (error) {
+      console.error('City name lookup failed:', error);
+      return null;
     }
   };
 
+  // Distanz zwischen zwei Koordinaten berechnen (Haversine-Formel)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Erdradius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
   const handleSearch = async () => {
-    if (!apiKey.trim()) {
-      setError('Bitte gib zuerst deinen OpenWeatherMap API-Key ein!');
-      setShowSettings(true);
+    const currentApiKey = apiKey.trim() || defaultApiKey;
+    
+    if (!currentApiKey || currentApiKey === 'HIER_DEINEN_API_KEY_EINFÜGEN') {
+      setError('API-Key fehlt! Bitte kontaktiere den Administrator.');
       return;
     }
     
@@ -304,52 +413,38 @@ const SonnensucheApp = () => {
       if (location === 'Mein aktueller Standort' && userLocation) {
         centerCoords = userLocation;
       } else {
-        centerCoords = await geocodeLocation(location);
+        centerCoords = await geocodeLocation(location, currentApiKey);
       }
       
       const locationGrid = generateLocationGrid(centerCoords.lat, centerCoords.lon, radius);
       
       const weatherPromises = locationGrid.map(async (point, index) => {
-        const weather = await fetchWeatherData(point.lat, point.lon);
+        const weather = await fetchWeatherData(point.lat, point.lon, currentApiKey);
         if (weather) {
-          // Filter für bessere Ortsnamen - kleine/unbekannte Orte aussortieren
-          const cityName = weather.cityName || `Region ${index + 1}`;
+          // Intelligente Ortsnamen-Suche
+          const cityResult = await findBestCityName(point.lat, point.lon, currentApiKey);
           
-          // Blacklist für sehr kleine/unbekannte Orte
-          const blacklistedTerms = [
-            'Hals', 'Siedlung', 'Weiler', 'Hof', 'Berg', 'Wald', 'Tal', 'Dorf',
-            'Klein', 'Groß', 'Ober', 'Unter', 'Nord', 'Süd', 'Ost', 'West'
-          ];
-          
-          // Überspringe Orte mit weniger als 4 Zeichen oder blacklisted terms
-          const isBlacklisted = blacklistedTerms.some(term => 
-            cityName.toLowerCase().includes(term.toLowerCase())
-          );
-          
-          if (cityName.length < 4 || isBlacklisted) {
-            // Verwende eine allgemeine Regionsbeschreibung statt unbekannter Ortsnamen
-            const direction = getDirection(point.lat, point.lon, centerCoords.lat, centerCoords.lon);
-            const newName = `${direction} von ${location}`;
-            
-            return {
-              id: index,
-              name: newName,
-              lat: point.lat.toFixed(4),
-              lon: point.lon.toFixed(4),
-              temperature: weather.avgTemp,
-              maxTemp: weather.maxTemp,
-              sunHours: weather.sunHours,
-              rainHours: weather.rainHours,
-              weatherScore: weather.weatherScore,
-              distance: point.distance,
-              forecast: weather.forecast,
-              totalDays: weather.totalDays
-            };
+          let displayName;
+          if (cityResult) {
+            if (cityResult.distance <= 10) {
+              // Sehr nah → direkter Stadtname
+              displayName = cityResult.name;
+            } else if (cityResult.distance <= 25) {
+              // Mittlere Entfernung → "Region um X"
+              displayName = `Region ${cityResult.name}`;
+            } else {
+              // Weit entfernt → "Umgebung X" 
+              displayName = `Umgebung ${cityResult.name}`;
+            }
+          } else {
+            // Fallback falls keine Stadt gefunden
+            const direction = point.distance < 30 ? 'Nahe' : 'Ferne';
+            displayName = `${direction} Region (${point.distance}km)`;
           }
           
           return {
             id: index,
-            name: cityName,
+            name: displayName,
             lat: point.lat.toFixed(4),
             lon: point.lon.toFixed(4),
             temperature: weather.avgTemp,
@@ -369,7 +464,7 @@ const SonnensucheApp = () => {
       const validResults = weatherResults.filter(result => result !== null);
       
       if (validResults.length === 0) {
-        setError('Keine Wetterdaten gefunden. Überprüfe deinen API-Key und die Internetverbindung.');
+        setError('Keine Wetterdaten gefunden. Bitte versuche es später nochmal.');
         return;
       }
       
@@ -415,6 +510,7 @@ const SonnensucheApp = () => {
     setStartDate(today.toISOString().split('T')[0]);
     setEndDate(tomorrow.toISOString().split('T')[0]);
     
+    // Lade gespeicherten API-Key falls vorhanden (überschreibt Standard)
     const savedApiKey = localStorage.getItem('openweather-api-key');
     if (savedApiKey) {
       setApiKey(savedApiKey);
@@ -447,37 +543,45 @@ const SonnensucheApp = () => {
               <div className="absolute -inset-2 bg-yellow-200 rounded-full opacity-20 animate-ping"></div>
             </div>
             <div className="flex-1 text-center mx-2">
-              <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg">Sonnensuche</h1>
+              <h1 
+                className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg cursor-pointer select-none" 
+                onClick={handleLogoClick}
+                title={logoClickCount > 0 ? `${logoClickCount}/5 für Admin-Zugang` : 'Sonnensuche'}
+              >
+                Sonnensuche
+              </h1>
               <p className="text-yellow-100 text-sm md:text-lg font-medium">www.sonnensuche.com</p>
             </div>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-1.5 text-white hover:text-yellow-200 hover:bg-white/10 rounded-lg transition-colors flex flex-col items-center min-w-[50px] flex-shrink-0"
-              title="API-Einstellungen"
-            >
-              <Settings size={14} />
-              <span className="text-xs">Set</span>
-            </button>
+            {showSettings && (
+              <button
+                onClick={() => setShowSettings(false)}
+                className="p-1.5 text-white hover:text-red-200 hover:bg-white/10 rounded-lg transition-colors flex flex-col items-center min-w-[50px] flex-shrink-0"
+                title="Einstellungen schließen"
+              >
+                <span className="text-lg">✕</span>
+                <span className="text-xs">Close</span>
+              </button>
+            )}
           </div>
           <p className="text-white text-xl drop-shadow font-semibold">Die erste App, die nach den Orten mit dem besten Wetter sucht</p>
           <p className="text-yellow-100 mt-2 text-lg font-bold">Für alle spontanen Urlauber und Ausflügler</p>
         </div>
 
         {showSettings && (
-          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 mb-6 border-l-4 border-blue-500">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">🔑 OpenWeatherMap API-Key</h3>
+          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 mb-6 border-l-4 border-red-500">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">🔧 Admin-Einstellungen</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  API-Key eingeben:
+                  API-Key überschreiben (optional):
                 </label>
                 <div className="flex gap-2">
                   <input
                     type={showApiKey ? "text" : "password"}
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Dein OpenWeatherMap API-Key"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Neuer OpenWeatherMap API-Key (optional)"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                   <button
                     onClick={() => setShowApiKey(!showApiKey)}
@@ -487,21 +591,19 @@ const SonnensucheApp = () => {
                   </button>
                   <button
                     onClick={saveApiKey}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                   >
                     Speichern
                   </button>
                 </div>
               </div>
-              <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>So erhältst du deinen kostenlosen API-Key:</strong></p>
-                <ol className="list-decimal list-inside space-y-1 ml-4">
-                  <li>Gehe zu <a href="https://openweathermap.org/api" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">openweathermap.org/api</a></li>
-                  <li>Erstelle einen kostenlosen Account</li>
-                  <li>Gehe zu "My API keys" in deinem Profil</li>
-                  <li>Kopiere deinen API-Key hierher</li>
-                </ol>
-                <p className="text-green-600">✅ Kostenlos: 1000 API-Aufrufe pro Tag</p>
+              <div className="text-sm text-red-600 space-y-2">
+                <p><strong>⚠️ Admin-Bereich:</strong></p>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li>Hier kannst du den Standard-API-Key überschreiben</li>
+                  <li>Leer lassen = Standard-Key wird verwendet</li>
+                  <li>Diese Einstellungen sind nur für Administratoren</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -519,22 +621,34 @@ const SonnensucheApp = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <button
               onClick={() => setSearchType('sonnenschein')}
-              className={`p-6 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+              className={`p-3 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
                 searchType === 'sonnenschein' 
                   ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white shadow-lg border-2 border-yellow-600 shadow-yellow-200' 
                   : 'bg-gradient-to-br from-yellow-100 to-orange-100 text-gray-700 hover:shadow-md border-2 border-transparent hover:border-yellow-300'
               }`}
             >
               <div className="text-center">
-                <div className="text-4xl mb-2">☀️</div>
-                <h3 className="text-xl font-bold">Sonnenschein</h3>
-                <p className="text-sm opacity-90">Warme Temperaturen & viel Sonne</p>
+                <div className="text-3xl mb-1">☀️</div>
+                <h3 className="text-lg font-bold">Sonnenschein</h3>
+                <p className="text-xs opacity-90">Warme Temperaturen & viel Sonne</p>
               </div>
             </button>
             
             <button
               onClick={() => setSearchType('schnee')}
-              className={`p-6 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+              className={`p-3 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+                searchType === 'schnee' 
+                  ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white shadow-lg border-2 border-blue-600 shadow-blue-200' 
+                  : 'bg-gradient-to-br from-blue-100 to-cyan-100 text-gray-700 hover:shadow-md border-2 border-transparent hover:border-blue-300'
+              }`}
+            >
+              <div className="text-center">
+                <div className="text-3xl mb-1">❄️</div>
+                <h3 className="text-lg font-bold">Schnee & Winter</h3>
+                <p className="text-xs opacity-90">Kalte Temperaturen & Schneechancen</p>
+              </div>
+            </button>
+          </div>:scale-105 active:scale-95 ${
                 searchType === 'schnee' 
                   ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white shadow-lg border-2 border-blue-600 shadow-blue-200' 
                   : 'bg-gradient-to-br from-blue-100 to-cyan-100 text-gray-700 hover:shadow-md border-2 border-transparent hover:border-blue-300'
@@ -631,7 +745,7 @@ const SonnensucheApp = () => {
 
           <button
             onClick={handleSearch}
-            disabled={loading || !apiKey.trim()}
+            disabled={loading}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-lg flex items-center justify-center gap-3 text-lg"
           >
             {loading ? (
@@ -642,7 +756,7 @@ const SonnensucheApp = () => {
             ) : (
               <>
                 <Search size={24} />
-                {apiKey.trim() ? 'Ab in die Sonne!' : 'API-Key benötigt'}
+                Ab in die Sonne!
                 <Sun size={24} className="animate-pulse" />
               </>
             )}
