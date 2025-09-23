@@ -4,7 +4,37 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#3B82F6" />
-    <meta name="description" content="Sonnensuche - Finde das beste Wetter in deiner Umgebung! Für spontane Urlauber und Ausflügler." />
+    
+    <!-- SEO Meta Tags -->
+    <title>Sonnensuche - Bestes Wetter in deiner Nähe finden | Spontane Ausflüge</title>
+    <meta name="description" content="Finde spontan die sonnigsten Orte um dich herum! Sonnensuche zeigt dir das beste Wetter für Ausflüge, Camping und Kurzurlaube. Kostenlose 5-Tage Wettervorhersage." />
+    <meta name="keywords" content="Wetter finden, bestes Wetter, Sonnensuche, Ausflugswetter, Camping Wetter, spontane Reise, Wettervorhersage, Deutschland Wetter" />
+    <meta name="author" content="Sonnensuche" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sonnensuche.com/" />
+    <meta property="og:title" content="Sonnensuche - Finde das beste Wetter für spontane Ausflüge" />
+    <meta property="og:description" content="Die erste App, die nach den Orten mit dem besten Wetter sucht. Perfekt für spontane Urlauber und Ausflügler!" />
+    <meta property="og:image" content="https://sonnensuche.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Sonnensuche" />
+    <meta property="og:locale" content="de_DE" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://sonnensuche.com/" />
+    <meta property="twitter:title" content="Sonnensuche - Bestes Wetter finden" />
+    <meta property="twitter:description" content="Finde spontan die sonnigsten Orte um dich herum! Kostenlose 5-Tage Wettervorhersage für Ausflüge." />
+    <meta property="twitter:image" content="https://sonnensuche.com/og-image.jpg" />
+    
+    <!-- Additional SEO -->
+    <link rel="canonical" href="https://sonnensuche.com/" />
+    <meta name="geo.region" content="DE" />
+    <meta name="geo.placename" content="Deutschland" />
+    <meta name="language" content="German" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -18,9 +48,39 @@
     <!-- Icons -->
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
     
-    <title>Sonnensuche - Das beste Wetter finden</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Structured Data / JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Sonnensuche",
+      "url": "https://sonnensuche.com",
+      "description": "Die erste App, die nach den Orten mit dem besten Wetter sucht. Für spontane Urlauber und Ausflügler.",
+      "applicationCategory": "WeatherApplication",
+      "operatingSystem": "Web Browser, iOS, Android",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "Sonnensuche",
+        "url": "https://sonnensuche.com"
+      },
+      "featureList": [
+        "5-Tage Wettervorhersage",
+        "Umkreissuche nach bestem Wetter", 
+        "Intelligente Ortsauswahl",
+        "PWA für Smartphones",
+        "Kostenlose Nutzung"
+      ]
+    }
+    </script>
 </head>
 <body>
     <noscript>Du musst JavaScript aktivieren, um Sonnensuche zu verwenden.</noscript>
