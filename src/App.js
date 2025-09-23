@@ -21,7 +21,7 @@ const SonnensucheApp = () => {
   const [logoClickCount, setLogoClickCount] = useState(0);
 
   // Standard API-Key (kann über geheime Settings überschrieben werden)
-  const defaultApiKey = 'b0b755e584a3876179481c54767939f5'; // TODO: Ersetze mit deinem echten API-Key
+  const defaultApiKey = 'HIER_DEINEN_API_KEY_EINFÜGEN'; // TODO: Ersetze mit deinem echten API-Key
 
   // PWA Installation + iOS Detection
   useEffect(() => {
@@ -1039,28 +1039,76 @@ const SonnensucheApp = () => {
         )}
 
         <div className="mt-8 bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600 text-white rounded-xl p-6">
-          <h3 className="text-2xl font-bold mb-4 text-center">🌦 Sonnensuche.com - Die Revolution der Wettersuche</h3>
+          <h2 className="text-2xl font-bold mb-4 text-center">🌦 Sonnensuche.com - Die Revolution der Wettersuche</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="text-center">
               <div className="bg-white bg-opacity-20 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <Search size={20} />
               </div>
-              <h4 className="font-bold mb-2">Nie wieder im Regen stehen</h4>
-              <p>Suche nach dem Wetter, das du dir wünschst - nicht nach Orten!</p>
+              <h3 className="font-bold mb-2">Nie wieder im Regen stehen</h3>
+              <p>Suche nach dem Wetter, das du dir wünschst - nicht nach Orten! Finde spontan die sonnigsten Plätze in deiner Umgebung.</p>
             </div>
             <div className="text-center">
               <div className="bg-white bg-opacity-20 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <MapPin size={20} />
               </div>
-              <h4 className="font-bold mb-2">Perfekt für spontane Ausflügler</h4>
-              <p>Perfekt für Kurzreisen, Camping und Outdoor-Abenteuer</p>
+              <h3 className="font-bold mb-2">Perfekt für spontane Ausflügler</h3>
+              <p>Ideal für Kurzreisen, Camping und Outdoor-Abenteuer. 5-Tage Wettervorhersage für ganz Deutschland.</p>
             </div>
             <div className="text-center">
               <div className="bg-white bg-opacity-20 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <Star size={20} />
               </div>
-              <h4 className="font-bold mb-2">Intelligentes Ranking</h4>
-              <p>KI-basierte Bewertung für die besten Wetter-Spots in deiner Nähe</p>
+              <h3 className="font-bold mb-2">Intelligentes Ranking</h3>
+              <p>KI-basierte Bewertung für die besten Wetter-Spots in deiner Nähe. Präzise Prognosen von OpenWeatherMap.</p>
+            </div>
+          </div>
+          
+          {/* SEO Content Block */}
+          <div className="mt-8 p-4 bg-white/10 rounded-lg">
+            <h3 className="font-bold mb-3">Warum Sonnensuche für deine Ausflüge?</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <h4 className="font-semibold mb-2">🌅 Für Outdoor-Aktivitäten:</h4>
+                <ul className="space-y-1">
+                  <li>• Wandern bei perfektem Wetter</li>
+                  <li>• Camping ohne Regen</li>
+                  <li>• Radtouren im Sonnenschein</li>
+                  <li>• Strand- und Badeausflüge</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">🎯 Smart & Präzise:</h4>
+                <ul className="space-y-1">
+                  <li>• 5-Tage Wettervorhersage</li>
+                  <li>• Umkreissuche bis 500km</li>
+                  <li>• Echte Wetterdaten</li>
+                  <li>• Kostenlos & ohne Anmeldung</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ Section für SEO */}
+        <div className="mt-8 bg-white/95 backdrop-blur rounded-xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Häufige Fragen zur Wettersuche</h2>
+          <div className="space-y-4">
+            <div className="border-b border-gray-200 pb-4">
+              <h3 className="font-bold text-gray-800 mb-2">Wie funktioniert die Sonnensuche?</h3>
+              <p className="text-gray-600 text-sm">Sonnensuche durchsucht einen von dir gewählten Umkreis nach den Orten mit dem besten Wetter. Du gibst deinen Startort und gewünschten Zeitraum ein, und wir zeigen dir die sonnigsten Orte in deiner Nähe.</p>
+            </div>
+            <div className="border-b border-gray-200 pb-4">
+              <h3 className="font-bold text-gray-800 mb-2">Ist Sonnensuche kostenlos?</h3>
+              <p className="text-gray-600 text-sm">Ja, Sonnensuche ist komplett kostenlos! Du brauchst keine Anmeldung und kannst sofort loslegen. Wir finanzieren uns über Partnerschaften mit Buchungsportalen.</p>
+            </div>
+            <div className="border-b border-gray-200 pb-4">
+              <h3 className="font-bold text-gray-800 mb-2">Wie genau sind die Wettervorhersagen?</h3>
+              <p className="text-gray-600 text-sm">Wir nutzen professionelle Wetterdaten von OpenWeatherMap mit 5-Tage Vorhersagen. Die Daten werden alle 3 Stunden aktualisiert und sind sehr zuverlässig für die Planung von Ausflügen.</p>
+            </div>
+            <div className="pb-4">
+              <h3 className="font-bold text-gray-800 mb-2">Kann ich die App auf mein Handy installieren?</h3>
+              <p className="text-gray-600 text-sm">Ja! Sonnensuche ist eine Progressive Web App (PWA). Du kannst sie direkt über deinen Browser auf dem Smartphone installieren - ganz ohne App Store. Einfach "Zum Home-Bildschirm hinzufügen" wählen.</p>
             </div>
           </div>
         </div>
