@@ -21,7 +21,7 @@ const SonnensucheApp = () => {
   const [logoClickCount, setLogoClickCount] = useState(0);
 
   // Standard API-Key (kann über geheime Settings überschrieben werden)
-  const defaultApiKey = 'HIER_DEINEN_API_KEY_EINFÜGEN'; // TODO: Ersetze mit deinem echten API-Key
+  const defaultApiKey = 'b0b755e584a3876179481c54767939f5'; // TODO: Ersetze mit deinem echten API-Key
 
   // PWA Installation + iOS Detection
   useEffect(() => {
