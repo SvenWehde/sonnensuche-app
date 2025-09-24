@@ -641,18 +641,7 @@ const SonnensucheApp = () => {
                 <p className="text-xs opacity-90">Kalte Temperaturen & Schneechancen</p>
               </div>
             </button>
-          </div>:scale-105 active:scale-95 ${
-                searchType === 'schnee' 
-                  ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white shadow-lg border-2 border-blue-600 shadow-blue-200' 
-                  : 'bg-gradient-to-br from-blue-100 to-cyan-100 text-gray-700 hover:shadow-md border-2 border-transparent hover:border-blue-300'
-              }`}
-            >
-              <div className="text-center">
-                <div className="text-4xl mb-2">❄️</div>
-                <h3 className="text-xl font-bold">Schnee & Winter</h3>
-                <p className="text-sm opacity-90">Kalte Temperaturen & Schneechancen</p>
-              </div>
-            </button>
+          
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
