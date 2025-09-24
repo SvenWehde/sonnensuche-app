@@ -20,20 +20,18 @@ const SonnensucheApp = () => {
   const [showIOSInstruct, setShowIOSInstruct] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
 
-  // Standard API-Key (kann über geheime Settings überschrieben werden)
-  const defaultApiKey = 'HIER_DEINEN_API_KEY_EINFÜGEN'; // TODO: Ersetze mit deinem echten API-Key
+  // Standard API-Key
+  const defaultApiKey = 'b0b755e584a3876179481c54767939f5';
 
   // PWA Installation + iOS Detection
   useEffect(() => {
-    // iOS Detection - verbesserte Erkennung
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     setIsIOS(iOS);
     
-    // Show iOS install instructions if not already installed
     if (iOS && !window.navigator.standalone) {
       setShowIOSInstruct(true);
-      setShowInstallPrompt(true); // Force show button on iOS
+      setShowInstallPrompt(true);
     }
 
     const handleBeforeInstallPrompt = (e) => {
@@ -57,7 +55,6 @@ const SonnensucheApp = () => {
 
   const handleIOSInstall = () => {
     setShowIOSInstruct(!showIOSInstruct);
-    console.log('iOS Install clicked', { isIOS, showIOSInstruct });
   };
 
   // Geheimer Settings-Zugang über Logo-Klicks
@@ -67,17 +64,88 @@ const SonnensucheApp = () => {
     
     if (newCount >= 5) {
       setShowSettings(true);
-      setLogoClickCount(0); // Reset
-      console.log('Secret admin access activated! 🔓');
+      setLogoClickCount(0);
     }
     
-    // Reset nach 3 Sekunden
     setTimeout(() => {
       if (newCount < 5) setLogoClickCount(0);
     }, 3000);
   };
 
-  // Geocoding: Ortsname zu Koordinaten - Verbessert für größere Städte
+  // Blacklist für kleine/unbekannte Orte
+  const getBlacklistedTerms = () => [
+    'Hals', 'Siedlung', 'Weiler', 'Hof', 'Berg', 'Wald', 'Tal', 'Dorf', 'Koog',
+    'Klein', 'Groß', 'Ober', 'Unter', 'Nord', 'Süd', 'Ost', 'West', 'Neu', 'Alt',
+    'Küstengewässer', 'Gewässer', 'Bucht', 'Moor', 'Heide', 'Forst', 'Marsch',
+    'Schleswig-Holstein', 'Niedersachsen', 'Mecklenburg', 'Brandenburg', 'Bayern',
+    'Gemeinde', 'Kreis', 'Landkreis', 'Bezirk', 'Amt', 'Verwaltung'
+  ];
+
+  // Bekannte deutsche Städte und Touristenorte
+  const getAcceptableCities = () => [
+    'Berlin', 'Hamburg', 'München', 'Köln', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 
+    'Leipzig', 'Dortmund', 'Essen', 'Bremen', 'Dresden', 'Hannover', 'Nürnberg',
+    'Duisburg', 'Bochum', 'Wuppertal', 'Bielefeld', 'Bonn', 'Münster', 'Mannheim',
+    'Augsburg', 'Wiesbaden', 'Mönchengladbach', 'Gelsenkirchen', 'Aachen', 'Braunschweig',
+    'Chemnitz', 'Kiel', 'Krefeld', 'Halle', 'Magdeburg', 'Freiburg', 'Oberhausen',
+    'Lübeck', 'Erfurt', 'Rostock', 'Kassel', 'Hagen', 'Potsdam', 'Saarbrücken',
+    'Mainz', 'Ludwigshafen', 'Oldenburg', 'Leverkusen', 'Osnabrück', 'Solingen',
+    'Heidelberg', 'Herne', 'Neuss', 'Darmstadt', 'Regensburg', 'Ingolstadt',
+    'Würzburg', 'Fürth', 'Wolfsburg', 'Offenbach', 'Ulm', 'Heilbronn', 'Pforzheim',
+    'Göttingen', 'Bottrop', 'Trier', 'Recklinghausen', 'Reutlingen', 'Bremerhaven',
+    'Bergisch Gladbach', 'Jena', 'Remscheid', 'Erlangen', 'Moers', 'Siegen', 'Hildesheim',
+    'Salzgitter', 'Cottbus', 'Wismar', 'Stralsund', 'Greifswald', 'Schwerin', 'Neubrandenburg',
+    'Reinfeld', 'Bad Segeberg', 'Bad Schwartau', 'Neustadt', 'Oldenburg in Holstein',
+    'Plön', 'Eutin', 'Malente', 'Preetz', 'Itzehoe', 'Rendsburg', 'Neumünster',
+    'Flensburg', 'Husum', 'Heide', 'Meldorf', 'Brunsbüttel', 'Glückstadt',
+    'Timmendorfer Strand', 'Scharbeutz', 'Büsum', 'Sankt Peter-Ording',
+    'Heiligendamm', 'Binz', 'Sellin', 'Warnemünde', 'Travemünde', 'Grömitz',
+    'Dahme', 'Kellenhusen', 'Großenbrode', 'Burg auf Fehmarn', 'Fehmarn',
+    'Sylt', 'Westerland', 'Kampen', 'List', 'Norderney', 'Borkum', 'Juist',
+    'Glowe', 'Göhren', 'Baabe', 'Zingst', 'Prerow', 'Born', 'Dierhagen',
+    'Kühlungsborn', 'Rerik', 'Boltenhagen', 'Usedom', 'Bansin', 'Heringsdorf',
+    'Celle', 'Lüneburg', 'Stade', 'Cuxhaven', 'Wilhelmshaven', 'Emden',
+    'Papenburg', 'Meppen', 'Lingen', 'Nordhorn', 'Vechta', 'Cloppenburg'
+  ];
+
+  // Intelligente Ortsnamen-Filterung
+  const getFilteredCityName = (cityName, distance, centerLocation) => {
+    if (!cityName || cityName.length < 3) {
+      return `Region nahe ${centerLocation}`;
+    }
+    
+    const blacklistedTerms = getBlacklistedTerms();
+    const acceptableCities = getAcceptableCities();
+    
+    const isBlacklisted = blacklistedTerms.some(term => 
+      cityName.toLowerCase().includes(term.toLowerCase())
+    );
+    
+    if (isBlacklisted) {
+      if (distance < 20) {
+        return `Nahe ${centerLocation}`;
+      } else {
+        return `Region um ${centerLocation}`;
+      }
+    }
+    
+    const isAcceptable = acceptableCities.some(city => 
+      cityName.toLowerCase().includes(city.toLowerCase()) ||
+      city.toLowerCase().includes(cityName.toLowerCase())
+    );
+    
+    if (isAcceptable) {
+      return cityName;
+    }
+    
+    if (distance < 15) {
+      return `Nahe ${centerLocation}`;
+    } else {
+      return `Region um ${centerLocation}`;
+    }
+  };
+
+  // Geocoding
   const geocodeLocation = async (locationName, currentApiKey) => {
     try {
       const response = await fetch(
@@ -89,25 +157,14 @@ const SonnensucheApp = () => {
         throw new Error('Ort nicht gefunden');
       }
       
-      // Priorisiere größere Städte und bekannte Orte
       const sortedResults = data.sort((a, b) => {
-        // Bekannte Städte bevorzugen
-        const knownCities = [
-          'Berlin', 'Hamburg', 'München', 'Köln', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 
-          'Leipzig', 'Dortmund', 'Essen', 'Bremen', 'Dresden', 'Hannover', 'Nürnberg',
-          'Duisburg', 'Bochum', 'Wuppertal', 'Bielefeld', 'Bonn', 'Münster', 'Mannheim',
-          'Augsburg', 'Wiesbaden', 'Mönchengladbach', 'Gelsenkirchen', 'Aachen', 'Braunschweig',
-          'Chemnitz', 'Kiel', 'Krefeld', 'Halle', 'Magdeburg', 'Freiburg', 'Oberhausen',
-          'Lübeck', 'Erfurt', 'Rostock', 'Kassel', 'Hagen', 'Potsdam', 'Saarbrücken'
-        ];
-        
+        const knownCities = getAcceptableCities();
         const aIsKnown = knownCities.some(city => a.name.toLowerCase().includes(city.toLowerCase()));
         const bIsKnown = knownCities.some(city => b.name.toLowerCase().includes(city.toLowerCase()));
         
         if (aIsKnown && !bIsKnown) return -1;
         if (!aIsKnown && bIsKnown) return 1;
         
-        // Bei gleicher "Bekanntheit" nach Population sortieren (falls vorhanden)
         if (a.population && b.population) {
           return b.population - a.population;
         }
@@ -127,19 +184,15 @@ const SonnensucheApp = () => {
     }
   };
 
-  // Generiere Koordinaten im Umkreis - Verbessert für größere Städte
+  // Generiere Koordinaten im Umkreis
   const generateLocationGrid = (centerLat, centerLon, radiusKm, gridSize = 16) => {
     const points = [];
     
-    // Strategischere Verteilung der Suchpunkte
     for (let i = 0; i < gridSize; i++) {
       const angle = (i / gridSize) * 2 * Math.PI;
       
-      // Verschiedene Entfernungen testen - mehr Fokus auf mittlere Distanzen
       [0.2, 0.4, 0.7, 1.0].forEach(distanceFactor => {
         const distance = radiusKm * distanceFactor;
-        
-        // Koordinaten berechnen
         const lat = centerLat + (distance / 111) * Math.cos(angle);
         const lon = centerLon + (distance / (111 * Math.cos(centerLat * Math.PI / 180))) * Math.sin(angle);
         
@@ -154,7 +207,7 @@ const SonnensucheApp = () => {
     return points;
   };
 
-  // Wetterdaten von OpenWeatherMap abrufen - Verbesserte Logik
+  // Wetterdaten abrufen
   const fetchWeatherData = async (lat, lon, currentApiKey) => {
     try {
       const response = await fetch(
@@ -184,13 +237,10 @@ const SonnensucheApp = () => {
           validReadings++;
           totalTemp += reading.main.temp;
           maxTemp = Math.max(maxTemp, reading.main.temp);
-          
-          // Bewölkung sammeln
           totalCloudiness += reading.clouds.all;
           
-          // Regen sammeln (realistisch)
           if (reading.rain && reading.rain['3h'] > 0) {
-            totalRainHours += 3; // 3h pro Reading mit Regen
+            totalRainHours += 3;
           }
         }
       });
@@ -203,25 +253,21 @@ const SonnensucheApp = () => {
       const avgCloudiness = totalCloudiness / validReadings;
       const avgRainHoursPerDay = totalRainHours / totalDays;
       
-      // Realistische Sonnenstunden-Berechnung
-      const maxPossibleSunHours = 12; // Maximum pro Tag
+      const maxPossibleSunHours = 12;
       const sunFactor = Math.max(0, (100 - avgCloudiness) / 100);
       let avgSunHoursPerDay = maxPossibleSunHours * sunFactor;
       
-      // Reduziere Sonnenstunden wenn es regnet
       if (avgRainHoursPerDay > 0) {
         avgSunHoursPerDay = Math.max(0, avgSunHoursPerDay - (avgRainHoursPerDay * 0.7));
       }
       
-      // Stelle sicher, dass Sonne + Regen nicht über 24h gehen
       const totalWeatherHours = avgSunHoursPerDay + avgRainHoursPerDay;
-      if (totalWeatherHours > 18) { // Max 18h "aktives" Wetter (6h neutral)
+      if (totalWeatherHours > 18) {
         const factor = 18 / totalWeatherHours;
         avgSunHoursPerDay *= factor;
         avgRainHoursPerDay *= factor;
       }
       
-      // Konsistente Vorhersage basierend auf realen Werten
       let forecast;
       if (searchType === 'sonnenschein') {
         if (avgRainHoursPerDay > 4) {
@@ -243,12 +289,11 @@ const SonnensucheApp = () => {
         }
       }
       
-      // Weather Score Berechnung
       let weatherScore;
       if (searchType === 'sonnenschein') {
         const tempScore = Math.max(0, Math.min(100, (avgTemp + 10) * 2.5));
         const sunScore = Math.max(0, Math.min(100, (avgSunHoursPerDay / 12) * 100));
-        const rainPenalty = Math.min(30, avgRainHoursPerDay * 5); // Max -30 für Regen
+        const rainPenalty = Math.min(30, avgRainHoursPerDay * 5);
         weatherScore = Math.round(Math.max(0, tempScore * 0.6 + sunScore * 0.4 - rainPenalty));
       } else {
         const tempScore = Math.max(0, Math.min(100, (10 - avgTemp) * 10));
@@ -291,97 +336,6 @@ const SonnensucheApp = () => {
     }
   };
 
-  // Blacklist für kleine/unbekannte Orte - deutlich erweitert
-  const getBlacklistedTerms = () => [
-    // Sehr kleine Orte
-    'Hals', 'Siedlung', 'Weiler', 'Hof', 'Berg', 'Wald', 'Tal', 'Dorf', 'Koog',
-    // Richtungsangaben
-    'Klein', 'Groß', 'Ober', 'Unter', 'Nord', 'Süd', 'Ost', 'West', 'Neu', 'Alt',
-    // Geografische Begriffe
-    'Küstengewässer', 'Gewässer', 'Bucht', 'Moor', 'Heide', 'Forst', 'Marsch',
-    // Bundesländer/Regionen (zu unspezifisch)
-    'Schleswig-Holstein', 'Niedersachsen', 'Mecklenburg', 'Brandenburg', 'Bayern',
-    // Andere unspezifische Begriffe
-    'Gemeinde', 'Kreis', 'Landkreis', 'Bezirk', 'Amt', 'Verwaltung'
-  ];
-
-  // Bekannte deutsche Städte und Touristenorte (≥2.500 EW oder touristisch wichtig)
-  const getAcceptableCities = () => [
-    // Großstädte (≥100.000 EW)
-    'Berlin', 'Hamburg', 'München', 'Köln', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 
-    'Leipzig', 'Dortmund', 'Essen', 'Bremen', 'Dresden', 'Hannover', 'Nürnberg',
-    'Duisburg', 'Bochum', 'Wuppertal', 'Bielefeld', 'Bonn', 'Münster', 'Mannheim',
-    'Augsburg', 'Wiesbaden', 'Mönchengladbach', 'Gelsenkirchen', 'Aachen', 'Braunschweig',
-    'Chemnitz', 'Kiel', 'Krefeld', 'Halle', 'Magdeburg', 'Freiburg', 'Oberhausen',
-    'Lübeck', 'Erfurt', 'Rostock', 'Kassel', 'Hagen', 'Potsdam', 'Saarbrücken',
-    
-    // Mittelstädte (20.000-100.000 EW)
-    'Mainz', 'Ludwigshafen', 'Oldenburg', 'Leverkusen', 'Osnabrück', 'Solingen',
-    'Heidelberg', 'Herne', 'Neuss', 'Darmstadt', 'Regensburg', 'Ingolstadt',
-    'Würzburg', 'Fürth', 'Wolfsburg', 'Offenbach', 'Ulm', 'Heilbronn', 'Pforzheim',
-    'Göttingen', 'Bottrop', 'Trier', 'Recklinghausen', 'Reutlingen', 'Bremerhaven',
-    'Bergisch Gladbach', 'Jena', 'Remscheid', 'Erlangen', 'Moers', 'Siegen', 'Hildesheim',
-    'Salzgitter', 'Cottbus', 'Wismar', 'Stralsund', 'Greifswald', 'Schwerin', 'Neubrandenberg',
-    
-    // Kleinere Städte (2.500-20.000 EW) - bekannte/wichtige Orte
-    'Reinfeld', 'Bad Segeberg', 'Bad Schwartau', 'Neustadt', 'Oldenburg in Holstein',
-    'Plön', 'Eutin', 'Malente', 'Preetz', 'Itzehoe', 'Rendsburg', 'Neumünster',
-    'Flensburg', 'Husum', 'Heide', 'Meldorf', 'Brunsbüttel', 'Glückstadt',
-    
-    // Nordsee/Ostsee Touristenorte (auch kleine Orte OK)
-    'Timmendorfer Strand', 'Scharbeutz', 'Büsum', 'Sankt Peter-Ording',
-    'Heiligendamm', 'Binz', 'Sellin', 'Warnemünde', 'Travemünde', 'Grömitz',
-    'Dahme', 'Kellenhusen', 'Großenbrode', 'Burg auf Fehmarn', 'Fehmarn',
-    'Sylt', 'Westerland', 'Kampen', 'List', 'Norderney', 'Borkum', 'Juist',
-    'Glowe', 'Göhren', 'Baabe', 'Zingst', 'Prerow', 'Born', 'Dierhagen',
-    'Kühlungsborn', 'Rerik', 'Boltenhagen', 'Usedom', 'Bansin', 'Heringsdorf',
-    
-    // Weitere wichtige Städte
-    'Celle', 'Lüneburg', 'Stade', 'Cuxhaven', 'Wilhelmshaven', 'Emden',
-    'Papenburg', 'Meppen', 'Lingen', 'Nordhorn', 'Vechta', 'Cloppenburg'
-  ];
-
-  // Intelligente Ortsnamen-Filterung
-  const getFilteredCityName = (cityName, distance, centerLocation) => {
-    if (!cityName || cityName.length < 3) {
-      return `Region nahe ${centerLocation}`;
-    }
-    
-    const blacklistedTerms = getBlacklistedTerms();
-    const acceptableCities = getAcceptableCities();
-    
-    // Check ob der Ort auf der Blacklist steht
-    const isBlacklisted = blacklistedTerms.some(term => 
-      cityName.toLowerCase().includes(term.toLowerCase())
-    );
-    
-    if (isBlacklisted) {
-      // Wenn distance < 20km, verwende "Nahe [centerLocation]"
-      if (distance < 20) {
-        return `Nahe ${centerLocation}`;
-      } else {
-        return `Region um ${centerLocation}`;
-      }
-    }
-    
-    // Check ob es eine bekannte/akzeptable Stadt ist
-    const isAcceptable = acceptableCities.some(city => 
-      cityName.toLowerCase().includes(city.toLowerCase()) ||
-      city.toLowerCase().includes(cityName.toLowerCase())
-    );
-    
-    if (isAcceptable) {
-      return cityName; // Direkt verwenden
-    }
-    
-    // Unbekannte kleine Stadt -> Fallback
-    if (distance < 15) {
-      return `Nahe ${centerLocation}`;
-    } else {
-      return `Region um ${centerLocation}`;
-    }
-  };
-
   const handleSearch = async () => {
     const currentApiKey = apiKey.trim() || defaultApiKey;
     
@@ -399,8 +353,7 @@ const SonnensucheApp = () => {
     setError('');
     setResults([]);
     
-    // Minimum Loading Time für bessere Ad-Performance
-    const minLoadingTime = 4000; // 4 Sekunden minimum
+    const minLoadingTime = 4000;
     const searchStartTime = Date.now();
     
     try {
@@ -417,7 +370,6 @@ const SonnensucheApp = () => {
       const weatherPromises = locationGrid.map(async (point, index) => {
         const weather = await fetchWeatherData(point.lat, point.lon, currentApiKey);
         if (weather) {
-          // Verwende die ursprüngliche OpenWeatherMap Stadt, aber mit intelligenter Filterung
           const originalCityName = weather.cityName || `Gebiet ${index + 1}`;
           const filteredCityName = getFilteredCityName(originalCityName, point.distance, location);
           
@@ -444,7 +396,6 @@ const SonnensucheApp = () => {
       
       if (validResults.length === 0) {
         setError('Keine Wetterdaten gefunden. Bitte versuche es später nochmal.');
-        // Auch bei Fehler minimum loading time einhalten
         const elapsedTime = Date.now() - searchStartTime;
         const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
         setTimeout(() => setLoading(false), remainingTime);
@@ -453,7 +404,6 @@ const SonnensucheApp = () => {
       
       const sortedResults = validResults.sort((a, b) => b.weatherScore - a.weatherScore);
       
-      // Stelle sicher, dass Loading mindestens 4 Sekunden dauert (für Interstitial Ads)
       const elapsedTime = Date.now() - searchStartTime;
       const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
       
@@ -464,7 +414,6 @@ const SonnensucheApp = () => {
       
     } catch (error) {
       setError(`Fehler beim Laden der Wetterdaten: ${error.message}`);
-      // Auch bei Fehler minimum loading time einhalten
       const elapsedTime = Date.now() - searchStartTime;
       const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
       setTimeout(() => setLoading(false), remainingTime);
@@ -477,6 +426,7 @@ const SonnensucheApp = () => {
         case 'Sonnig': return '☀️';
         case 'Bewölkt': return '⛅';
         case 'Bedeckt': return '☁️';
+        case 'Regnerisch': return '🌧️';
         default: return '🌤️';
       }
     } else {
@@ -503,7 +453,6 @@ const SonnensucheApp = () => {
     setStartDate(today.toISOString().split('T')[0]);
     setEndDate(tomorrow.toISOString().split('T')[0]);
     
-    // Lade gespeicherten API-Key falls vorhanden (überschreibt Standard)
     const savedApiKey = localStorage.getItem('openweather-api-key');
     if (savedApiKey) {
       setApiKey(savedApiKey);
@@ -641,7 +590,6 @@ const SonnensucheApp = () => {
                 <p className="text-xs opacity-90">Kalte Temperaturen & Schneechancen</p>
               </div>
             </button>
-          
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -667,8 +615,7 @@ const SonnensucheApp = () => {
                 </button>
               </div>
             </div>
-
-            <div className="md:col-span-2 lg:col-span-1">
+ <div className="md:col-span-2 lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Wie weit bist du bereit zu fahren? ({radius} km)
               </label>
@@ -929,21 +876,6 @@ const SonnensucheApp = () => {
                   {/* Weitere Werbung nach dem 5. und 8. Ergebnis */}
                   {(index === 4 || index === 7) && (
                     <div className="col-span-full my-4 p-4 bg-white/90 rounded-lg text-center">
-                      <span className="text-xs text-gray-500">Werbung</span>
-                      <div className="bg-gray-200 h-32 flex items-center justify-center text-gray-500 rounded mt-2">
-                        [Google AdSense Native Ad 336x280]
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>ere Partner unterstützt du Sonnensuche.com
-                      </p>
-                    </div>
-                  </div>
-
-                  {(index === 2 || index === 5) && (
-                    <div className="my-4 p-4 bg-white/90 rounded-lg text-center">
                       <span className="text-xs text-gray-500">Werbung</span>
                       <div className="bg-gray-200 h-32 flex items-center justify-center text-gray-500 rounded mt-2">
                         [Google AdSense Native Ad 336x280]
