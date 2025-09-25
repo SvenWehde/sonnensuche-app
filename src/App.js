@@ -481,7 +481,7 @@ useEffect(() => {
               onClick={handleLogoClick}
               title={logoClickCount > 0 ? `${logoClickCount}/5 für Admin-Zugang` : 'Sonnensuche'}
             >
-              <Sun className="w-8 h-8 text-yellow" />
+              <Sun className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl md:text-5xl font-light text-white tracking-tight">
               Sonnensuche
