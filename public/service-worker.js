@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sonnensuche-v3'; // Erhöhe auf v3!
+const CACHE_NAME = 'sonnensuche-v4'; // Erhöhe auf v3!
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
