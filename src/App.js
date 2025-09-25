@@ -476,7 +476,7 @@ const SonnensucheApp = () => {
               onClick={handleLogoClick}
               title={logoClickCount > 0 ? `${logoClickCount}/5 für Admin-Zugang` : 'Sonnensuche'}
             >
-              <Sun className="w-8 h-8 text-white" />
+              <Sun className="w-8 h-8 text-yellow" />
             </div>
             <h1 className="text-4xl md:text-5xl font-light text-white tracking-tight">
               Sonnensuche
