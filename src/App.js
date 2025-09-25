@@ -108,43 +108,35 @@ const SonnensucheApp = () => {
     'Papenburg', 'Meppen', 'Lingen', 'Nordhorn', 'Vechta', 'Cloppenburg'
   ];
 
-  // Intelligente Ortsnamen-Filterung - REPARIERTE VERSION
   const getFilteredCityName = (cityName, distance, centerLocation) => {
-    if (!cityName || cityName.length < 3) {
-      return `${Math.round(distance)} km von ${centerLocation}`;
-    }
-    
-    const blacklistedTerms = getBlacklistedTerms();
-    const acceptableCities = getAcceptableCities();
-    
-    // Prüfe ob der Ortsname in der Liste bekannter Städte ist
-    const isAcceptable = acceptableCities.some(city => 
-      cityName.toLowerCase().includes(city.toLowerCase()) ||
-      city.toLowerCase().includes(cityName.toLowerCase())
-    );
-    
-    if (isAcceptable) {
-      return cityName;
-    }
-    
-    // Prüfe ob der Name blacklisted Begriffe enthält
-    const isBlacklisted = blacklistedTerms.some(term => 
-      cityName.toLowerCase().includes(term.toLowerCase())
-    );
-    
-    if (isBlacklisted) {
-      // Für sehr kleine Orte generischen Namen verwenden
-      if (distance < 20) {
-        return `${cityName} (${Math.round(distance)} km)`;
-      } else {
-        return `${Math.round(distance)} km von ${centerLocation}`;
-      }
-    }
-    
-    // Für alle anderen Orte: Originalname verwenden, aber mit Entfernung
-    return `${cityName} (${Math.round(distance)} km)`;
-  };
-
+  // Wenn kein Ortsname vorhanden, verwende den centerLocation Namen
+  if (!cityName || cityName.length < 3) {
+    return centerLocation; // Gibt den Ausgangspunkt zurück statt generischen Text
+  }
+  
+  const blacklistedTerms = getBlacklistedTerms();
+  const acceptableCities = getAcceptableCities();
+  
+  // Prüfe ob der Ortsname in der Liste bekannter Städte ist
+  const isAcceptable = acceptableCities.some(city => 
+    cityName.toLowerCase().includes(city.toLowerCase()) ||
+    city.toLowerCase().includes(cityName.toLowerCase())
+  );
+  
+  if (isAcceptable) {
+    return cityName; // Bekannte Städte ohne Zusatz zurückgeben
+  }
+  
+  // Prüfe ob der Name blacklisted Begriffe enthält
+  const isBlacklisted = blacklistedTerms.some(term => 
+    cityName.toLowerCase().includes(term.toLowerCase())
+  );
+  
+  // Für alle Orte (auch blacklisted): Gib immer den Ortsnamen zurück
+  // Entferne generische Bezeichnungen komplett
+  return cityName;
+};
+ 
   // Geocoding
   const geocodeLocation = async (locationName, currentApiKey) => {
     try {
