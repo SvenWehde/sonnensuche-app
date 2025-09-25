@@ -43,7 +43,12 @@ const SonnensucheApp = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
-
+// Service Worker Registration - füge das NACH dem ersten useEffect ein
+useEffect(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js');
+  }
+}, []);
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
