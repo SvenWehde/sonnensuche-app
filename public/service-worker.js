@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sonnensuche-v1';
+const CACHE_NAME = 'sonnensuche-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
