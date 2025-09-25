@@ -13,7 +13,7 @@ const SonnensucheApp = () => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [error, setError] = useState('');
-  const [searchType, setSearchType] = useState('sonnenschein');
+  const [searchType, setSearchType] = useState('');
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOS, setIsIOS] = useState(false);
@@ -542,36 +542,36 @@ useEffect(() => {
           <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
             Was suchst du?
           </h2>
-          
-          {/* Search Type Selector */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <button
-              onClick={() => setSearchType('sonnenschein')}
-              className={`p-6 rounded-xl border-2 transition-all ${
-                searchType === 'sonnenschein' 
-                  ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-transparent shadow-lg scale-105' 
-                  : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md'
-              }`}
-            >
-              <Sun className={`w-8 h-8 mx-auto mb-2 ${searchType === 'sonnenschein' ? 'text-white' : 'text-yellow-500'}`} />
-              <h3 className="text-lg font-semibold mb-1">Sonnenschein</h3>
-              <p className="text-sm opacity-80">Warme Temperaturen & viel Sonne</p>
-            </button>
-            
-            <button
-              onClick={() => setSearchType('schnee')}
-              className={`p-6 rounded-xl border-2 transition-all ${
-                searchType === 'schnee' 
-                  ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-transparent shadow-lg scale-105' 
-                  : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md'
-              }`}
-            >
-              <div className={`w-8 h-8 mx-auto mb-2 text-2xl`}>❄️</div>
-              <h3 className="text-lg font-semibold mb-1">Schnee & Winter</h3>
-              <p className="text-sm opacity-80">Kalte Temperaturen & Schneechancen</p>
-            </button>
-          </div>
 
+{/* Search Type Selector */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+  <button
+    onClick={() => setSearchType('sonnenschein')}
+    className={`p-6 rounded-xl border-2 transition-all ${
+      searchType === 'sonnenschein' 
+        ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white border-transparent shadow-lg scale-105' 
+        : 'bg-white border-gray-200 hover:border-yellow-300 hover:shadow-md'
+    }`}
+  >
+    <Sun className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
+    <h3 className="text-lg font-semibold mb-1">Sonnenschein</h3>
+    <p className="text-sm opacity-80">Warme Temperaturen & viel Sonne</p>
+  </button>
+  
+  <button
+    onClick={() => setSearchType('schnee')}
+    className={`p-6 rounded-xl border-2 transition-all ${
+      searchType === 'schnee' 
+        ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white border-transparent shadow-lg scale-105' 
+        : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
+    }`}
+  >
+    <div className="w-8 h-8 mx-auto mb-2 text-2xl">❄️</div>
+    <h3 className="text-lg font-semibold mb-1">Schnee & Winter</h3>
+    <p className="text-sm opacity-80">Kalte Temperaturen & Schneechancen</p>
+  </button>
+</div>
+         
           {/* Search Form */}
           <div className="space-y-6">
             <div>
