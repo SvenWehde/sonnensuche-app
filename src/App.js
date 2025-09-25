@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Sun, Thermometer, Calendar, Search, Loader2, Settings, Eye, EyeOff, Star, Navigation, Clock, Download } from 'lucide-react';
+import { MapPin, Sun, Thermometer, Calendar, Search, Loader2, Settings, Eye, EyeOff, Star, Navigation, Clock, Download, ChevronRight, Map, Home } from 'lucide-react';
 
 const SonnensucheApp = () => {
   const [location, setLocation] = useState('');
@@ -109,34 +109,29 @@ const SonnensucheApp = () => {
   ];
 
   const getFilteredCityName = (cityName, distance, centerLocation) => {
-  // Wenn kein Ortsname vorhanden, verwende den centerLocation Namen
-  if (!cityName || cityName.length < 3) {
-    return centerLocation; // Gibt den Ausgangspunkt zurück statt generischen Text
-  }
-  
-  const blacklistedTerms = getBlacklistedTerms();
-  const acceptableCities = getAcceptableCities();
-  
-  // Prüfe ob der Ortsname in der Liste bekannter Städte ist
-  const isAcceptable = acceptableCities.some(city => 
-    cityName.toLowerCase().includes(city.toLowerCase()) ||
-    city.toLowerCase().includes(cityName.toLowerCase())
-  );
-  
-  if (isAcceptable) {
-    return cityName; // Bekannte Städte ohne Zusatz zurückgeben
-  }
-  
-  // Prüfe ob der Name blacklisted Begriffe enthält
-  const isBlacklisted = blacklistedTerms.some(term => 
-    cityName.toLowerCase().includes(term.toLowerCase())
-  );
-  
-  // Für alle Orte (auch blacklisted): Gib immer den Ortsnamen zurück
-  // Entferne generische Bezeichnungen komplett
-  return cityName;
-};
- 
+    if (!cityName || cityName.length < 3) {
+      return centerLocation;
+    }
+    
+    const blacklistedTerms = getBlacklistedTerms();
+    const acceptableCities = getAcceptableCities();
+    
+    const isAcceptable = acceptableCities.some(city => 
+      cityName.toLowerCase().includes(city.toLowerCase()) ||
+      city.toLowerCase().includes(cityName.toLowerCase())
+    );
+    
+    if (isAcceptable) {
+      return cityName;
+    }
+    
+    const isBlacklisted = blacklistedTerms.some(term => 
+      cityName.toLowerCase().includes(term.toLowerCase())
+    );
+    
+    return cityName;
+  };
+
   // Geocoding
   const geocodeLocation = async (locationName, currentApiKey) => {
     try {
@@ -412,29 +407,24 @@ const SonnensucheApp = () => {
     }
   };
 
-  const getWeatherIcon = (forecast, searchType) => {
+  const getWeatherIcon = (forecast) => {
     if (searchType === 'sonnenschein') {
       switch (forecast) {
-        case 'Sonnig': return '☀️';
-        case 'Bewölkt': return '⛅';
-        case 'Bedeckt': return '☁️';
-        case 'Regnerisch': return '🌧️';
-        default: return '🌤️';
+        case 'Sonnig': return <Sun className="w-6 h-6 text-yellow-500 inline" />;
+        case 'Bewölkt': return <Sun className="w-6 h-6 text-gray-400 inline" />;
+        case 'Bedeckt': return <Sun className="w-6 h-6 text-gray-600 inline" />;
+        case 'Regnerisch': return <Sun className="w-6 h-6 text-blue-500 inline" />;
+        default: return <Sun className="w-6 h-6 text-yellow-400 inline" />;
       }
     } else {
-      switch (forecast) {
-        case 'Schnee': return '❄️';
-        case 'Frost': return '🌨️';
-        case 'Mild': return '🌤️';
-        default: return '☁️';
-      }
+      return '❄️';
     }
   };
 
   const getScoreColor = (score) => {
-    if (score >= 80) return 'text-green-600 bg-green-100';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
+    if (score >= 80) return 'bg-gradient-to-r from-green-500 to-green-600 text-white';
+    if (score >= 60) return 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white';
+    return 'bg-gradient-to-r from-red-500 to-red-600 text-white';
   };
 
   useEffect(() => {
@@ -458,51 +448,52 @@ const SonnensucheApp = () => {
       setError('');
     }
   };
-return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-400 p-4">
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-100 border-t border-gray-200 p-2 text-center text-xs z-50">
-        <span className="text-gray-600">Werbung</span>
-        <div className="bg-gray-200 h-12 flex items-center justify-center text-gray-500 rounded mt-1">
-          [Google AdSense Banner 320x50]
+  
+
+  // TEIL 1 ENDET HIER - FORTSETZUNG IN TEIL 2
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-600">
+      {/* Fixed Footer Ad */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-2 text-center text-xs z-50">
+        <span className="text-gray-500">Anzeige</span>
+        <div className="bg-gray-100 h-12 flex items-center justify-center text-gray-400 rounded mt-1">
+          [Google AdSense]
         </div>
-        <button className="absolute top-1 right-1 text-gray-400 hover:text-gray-600" onClick={() => document.querySelector('.fixed.bottom-0').style.display = 'none'}>×</button>
+        <button 
+          className="absolute top-1 right-1 text-gray-400 hover:text-gray-600" 
+          onClick={(e) => e.currentTarget.parentElement.style.display = 'none'}
+        >
+          ×
+        </button>
       </div>
-
-      <div className="max-w-4xl mx-auto pb-20">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-between gap-2 mb-4 px-2">
-            <div className="relative">
-              <Sun className="text-yellow-300 animate-pulse" size={60} />
-              <div className="absolute -inset-2 bg-yellow-200 rounded-full opacity-20 animate-ping"></div>
+      
+      <div className="max-w-6xl mx-auto p-4 pb-20">
+        {/* Header */}
+        <div className="text-center py-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div 
+              className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg cursor-pointer"
+              onClick={handleLogoClick}
+              title={logoClickCount > 0 ? `${logoClickCount}/5 für Admin-Zugang` : 'Sonnensuche'}
+            >
+              <Sun className="w-8 h-8 text-white" />
             </div>
-            <div className="flex-1 text-center mx-2">
-              <h1 
-                className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg cursor-pointer select-none" 
-                onClick={handleLogoClick}
-                title={logoClickCount > 0 ? `${logoClickCount}/5 für Admin-Zugang` : 'Sonnensuche'}
-              >
-                Sonnensuche
-              </h1>
-              <p className="text-yellow-100 text-sm md:text-lg font-medium">www.sonnensuche.com</p>
-            </div>
-            {showSettings && (
-              <button
-                onClick={() => setShowSettings(false)}
-                className="p-1.5 text-white hover:text-red-200 hover:bg-white/10 rounded-lg transition-colors flex flex-col items-center min-w-[50px] flex-shrink-0"
-                title="Einstellungen schließen"
-              >
-                <span className="text-lg">✕</span>
-                <span className="text-xs">Close</span>
-              </button>
-            )}
+            <h1 className="text-4xl md:text-5xl font-light text-white tracking-tight">
+              Sonnensuche
+            </h1>
           </div>
-          <p className="text-white text-xl drop-shadow font-semibold">Die erste App, die nach den Orten mit dem besten Wetter sucht</p>
-          <p className="text-yellow-100 mt-2 text-lg font-bold">Für alle spontanen Urlauber und Ausflügler</p>
+          <p className="text-white/90 text-lg md:text-xl font-light">
+            Die erste App, die nach den Orten mit dem besten Wetter sucht
+          </p>
+          <p className="text-white/80 text-base md:text-lg mt-1">
+            Für alle spontanen Urlauber und Ausflügler
+          </p>
         </div>
 
+        {/* Admin Settings */}
         {showSettings && (
-          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 mb-6 border-l-4 border-red-500">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">🔧 Admin-Einstellungen</h3>
+          <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl p-6 mb-6 border border-white/20">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Admin-Einstellungen</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -513,80 +504,73 @@ return (
                     type={showApiKey ? "text" : "password"}
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Neuer OpenWeatherMap API-Key (optional)"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Neuer OpenWeatherMap API-Key"
+                    className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
                   />
                   <button
                     onClick={() => setShowApiKey(!showApiKey)}
-                    className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
                   >
                     {showApiKey ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                   <button
                     onClick={saveApiKey}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:shadow-lg transition-all"
                   >
                     Speichern
                   </button>
                 </div>
               </div>
-              <div className="text-sm text-red-600 space-y-2">
-                <p><strong>⚠️ Admin-Bereich:</strong></p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Hier kannst du den Standard-API-Key überschreiben</li>
-                  <li>Leer lassen = Standard-Key wird verwendet</li>
-                  <li>Diese Einstellungen sind nur für Administratoren</li>
-                </ul>
-              </div>
             </div>
           </div>
         )}
 
+        {/* Error Message */}
         {error && (
-          <div className="bg-red-50/95 backdrop-blur border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-50/95 backdrop-blur-lg border-2 border-red-200 text-red-700 px-6 py-4 rounded-xl mb-6">
             <strong>Fehler:</strong> {error}
           </div>
         )}
 
-        <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Was suchst du?</h2>
+        {/* Search Card */}
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl p-8 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+            Was suchst du?
+          </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Search Type Selector */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <button
               onClick={() => setSearchType('sonnenschein')}
-              className={`p-3 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+              className={`p-6 rounded-xl border-2 transition-all ${
                 searchType === 'sonnenschein' 
-                  ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white shadow-lg border-2 border-yellow-600 shadow-yellow-200' 
-                  : 'bg-gradient-to-br from-yellow-100 to-orange-100 text-gray-700 hover:shadow-md border-2 border-transparent hover:border-yellow-300'
+                  ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-transparent shadow-lg scale-105' 
+                  : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md'
               }`}
             >
-              <div className="text-center">
-                <div className="text-3xl mb-1">☀️</div>
-                <h3 className="text-lg font-bold">Sonnenschein</h3>
-                <p className="text-xs opacity-90">Warme Temperaturen & viel Sonne</p>
-              </div>
+              <Sun className={`w-8 h-8 mx-auto mb-2 ${searchType === 'sonnenschein' ? 'text-white' : 'text-yellow-500'}`} />
+              <h3 className="text-lg font-semibold mb-1">Sonnenschein</h3>
+              <p className="text-sm opacity-80">Warme Temperaturen & viel Sonne</p>
             </button>
             
             <button
               onClick={() => setSearchType('schnee')}
-              className={`p-3 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+              className={`p-6 rounded-xl border-2 transition-all ${
                 searchType === 'schnee' 
-                  ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white shadow-lg border-2 border-blue-600 shadow-blue-200' 
-                  : 'bg-gradient-to-br from-blue-100 to-cyan-100 text-gray-700 hover:shadow-md border-2 border-transparent hover:border-blue-300'
+                  ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-transparent shadow-lg scale-105' 
+                  : 'bg-white border-gray-200 hover:border-purple-300 hover:shadow-md'
               }`}
             >
-              <div className="text-center">
-              <div className="text-3xl mb-1">❄️</div>
-                <h3 className="text-lg font-bold">Schnee & Winter</h3>
-                <p className="text-xs opacity-90">Kalte Temperaturen & Schneechancen</p>
-              </div>
+              <div className={`w-8 h-8 mx-auto mb-2 text-2xl`}>❄️</div>
+              <h3 className="text-lg font-semibold mb-1">Schnee & Winter</h3>
+              <p className="text-sm opacity-80">Kalte Temperaturen & Schneechancen</p>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="md:col-span-2 lg:col-span-1">
+          {/* Search Form */}
+          <div className="space-y-6">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin size={16} className="inline mr-1" />
                 Von wo startest du?
               </label>
               <div className="flex gap-2">
@@ -595,21 +579,21 @@ return (
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="z.B. Berlin, München"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
                 />
                 <button
                   onClick={getCurrentLocation}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
+                  className="px-4 py-3 bg-gray-50 hover:bg-purple-50 border-2 border-gray-200 hover:border-purple-300 rounded-xl transition-all"
                   title="Aktuellen Standort verwenden"
                 >
-                  <Navigation size={18} />
+                  <Navigation size={20} className="text-gray-600" />
                 </button>
               </div>
             </div>
 
-            <div className="md:col-span-2 lg:col-span-1">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Wie weit bist du bereit zu fahren? ({radius} km)
+                Suchradius - Wie weit bist du bereit zu fahren? ({radius} km)
               </label>
               <input
                 type="range"
@@ -617,201 +601,186 @@ return (
                 max="500"
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                style={{
+                  background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${(radius - 10) / 4.9}%, #e5e7eb ${(radius - 10) / 4.9}%, #e5e7eb 100%)`
+                }}
               />
-              <div className="text-center text-sm text-gray-600 mt-1">
-                {radius < 50 ? 'Nah' : radius < 150 ? 'Mittel' : 'Weit'} - {radius} km
+              <div className="text-center text-sm text-gray-600 mt-2">
+                {radius < 50 ? 'Kurze Fahrt' : radius < 150 ? 'Mittlere Distanz' : 'Weite Reise'} - {radius} km
               </div>
             </div>
 
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Calendar size={16} className="inline mr-1" />
-                Wann möchtest du los?
-              </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Wann möchtest du los?
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
+                />
+              </div>
 
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Clock size={16} className="inline mr-1" />
-                Bis wann?
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bis wann?
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
+                />
+              </div>
             </div>
           </div>
 
           {loading && (
-            <div className="mb-4 p-4 bg-blue-50 rounded-lg text-center">
-              <span className="text-xs text-blue-600">Gesponsert - Analysiere Wetterdaten für beste Ergebnisse</span>
-              <div className="bg-blue-100 h-20 flex items-center justify-center text-blue-500 rounded mt-2">
-                [Google AdSense Interstitial - Video Ads]
+            <div className="mt-6 p-4 bg-purple-50 rounded-lg text-center">
+              <span className="text-xs text-purple-600">Gesponsert - Analysiere Wetterdaten für beste Ergebnisse</span>
+              <div className="bg-purple-100 h-20 flex items-center justify-center text-purple-400 rounded mt-2">
+                [Google AdSense]
               </div>
             </div>
           )}
 
-          <p className="text-center text-blue-600 mb-4 font-medium">
-            📅 5-Tage Wettervorhersage • Präzise Prognosen
-          </p>
-
           <button
             onClick={handleSearch}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-lg flex items-center justify-center gap-3 text-lg"
+            className="w-full mt-8 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] hover:shadow-xl disabled:scale-100 disabled:shadow-none flex items-center justify-center gap-3 text-lg"
           >
             {loading ? (
               <>
                 <Loader2 className="animate-spin" size={24} />
-                Suche die besten Orte für dich...
+                <span>Suche die besten Orte für dich...</span>
               </>
             ) : (
               <>
                 <Search size={24} />
-                Ab in die Sonne!
-                <Sun size={24} className="animate-pulse" />
+                <span>Beste Orte finden</span>
               </>
             )}
           </button>
         </div>
 
-        {/* PWA Download Button - Nur anzeigen wenn noch keine Ergebnisse da sind */}
+        {/* PWA Install Prompt - Vor Ergebnissen */}
         {(showInstallPrompt || isIOS) && results.length === 0 && (
-          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
+          <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl p-8 mb-8 border-l-4 border-purple-500">
             <div className="text-center">
               <div className="relative inline-block mb-4">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-full p-4 shadow-lg">
-                  <Sun className="text-yellow-300 animate-pulse" size={32} />
+                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full p-4 shadow-lg">
+                  <Download className="w-8 h-8 text-white" />
                 </div>
-                <div className="absolute -inset-2 bg-blue-200 rounded-full opacity-30 animate-ping"></div>
               </div>
               
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">📱 Sonnensuche-App kostenlos downloaden</h3>
-              <p className="text-gray-600 mb-4">Installiere die App auf deinem Handy für schnelleren Zugriff - ohne App Store!</p>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Sonnensuche-App installieren</h3>
+              <p className="text-gray-600 mb-6">Installiere die App auf deinem Handy für schnelleren Zugriff!</p>
               
               <button
                 onClick={isIOS ? handleIOSInstall : handleInstallClick}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-3 text-lg"
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg"
               >
-                <Download size={24} />
-                <Sun size={24} className="text-yellow-300 animate-pulse" />
-                {isIOS ? 'iPhone Installationsanleitung anzeigen' : 'Jetzt kostenlos installieren'}
-                <Sun size={24} className="text-yellow-300 animate-pulse" />
+                {isIOS ? 'Installationsanleitung anzeigen' : 'App installieren'}
               </button>
               
-              <p className="text-sm text-gray-500 mt-3">
-                ✅ Kostenlos • ✅ Ohne App Store • ✅ Funktioniert offline
+              <p className="text-sm text-gray-500 mt-4">
+                Kostenlos • Ohne App Store • Funktioniert offline
               </p>
             </div>
 
-            {/* iOS Installation Instructions */}
+            {/* iOS Instructions */}
             {isIOS && showIOSInstruct && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <h4 className="font-bold text-blue-800 mb-3 text-center">📲 So installierst du Sonnensuche auf dein iPhone:</h4>
-                <div className="space-y-3 text-sm text-blue-700">
+              <div className="mt-6 p-6 bg-purple-50 rounded-xl">
+                <h4 className="font-bold text-purple-800 mb-4 text-center">So installierst du die App auf dem iPhone:</h4>
+                <div className="space-y-3 text-sm text-purple-700">
                   <div className="flex items-start gap-3">
-                    <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-                    <p>Tippe auf das <strong>Teilen-Symbol</strong> unten in Safari (Quadrat mit Pfeil nach oben) 📤</p>
+                    <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                    <p>Tippe auf das Teilen-Symbol unten in Safari</p>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-                    <p>Scrolle runter und wähle <strong>"Zum Home-Bildschirm hinzufügen"</strong> 📱</p>
+                    <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                    <p>Wähle "Zum Home-Bildschirm hinzufügen"</p>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-                    <p>Tippe auf <strong>"Hinzufügen"</strong> - fertig! 🎉</p>
+                    <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                    <p>Tippe auf "Hinzufügen" - fertig!</p>
                   </div>
-                </div>
-                <div className="mt-4 p-3 bg-green-100 rounded-lg border border-green-200">
-                  <p className="text-green-800 text-xs text-center">
-                    ✅ Die Sonnensuche-App erscheint dann als Icon auf deinem Home-Bildschirm!
-                  </p>
                 </div>
               </div>
             )}
           </div>
         )}
 
+        {/* Results */}
         {results.length > 0 && (
-          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">
+          <div>
+            <h2 className="text-3xl font-light text-white text-center mb-8">
               Deine Top Ergebnisse
             </h2>
-            <p className="text-center text-gray-600 mb-6">
-              Orte mit dem schönsten Wetter für deinen Urlaub oder Ausflug
-            </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {results.slice(0, 12).map((spot, index) => (
-                <div key={spot.id}>
-                  <div
-                    className={`p-5 rounded-xl border-2 transition-all hover:shadow-lg transform hover:scale-105 ${
-                      index === 0 
-                        ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50 shadow-md' 
-                        : 'border-gray-200 bg-gradient-to-br from-gray-50 to-blue-50'
-                    }`}
-                  >
+                <React.Fragment key={spot.id}>
+                  <div className={`bg-white/95 backdrop-blur-lg rounded-2xl p-6 transition-all hover:shadow-2xl hover:scale-[1.02] ${
+                    index === 0 ? 'ring-2 ring-yellow-400 ring-offset-4 ring-offset-transparent' : ''
+                  }`}>
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-xl text-gray-800 flex items-center gap-2 mb-1">
-                          {index === 0 && '👑'}
-                          <span className="text-2xl">{index + 1}</span>
-                          {spot.name}
-                          <span className="text-3xl">{getWeatherIcon(spot.forecast, searchType)}</span>
-                        </h3>
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <MapPin size={14} />
-                          {spot.distance} km entfernt
-                        </p>
+                      <div className="flex items-start gap-3">
+                        <div className={`text-3xl font-bold ${index === 0 ? 'text-yellow-500' : 'text-purple-600'}`}>
+                          #{index + 1}
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                            {spot.name}
+                            {getWeatherIcon(spot.forecast)}
+                          </h3>
+                          <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+                            <MapPin size={14} />
+                            {spot.distance} km entfernt
+                          </p>
+                        </div>
                       </div>
-                      <div className={`px-4 py-2 rounded-full text-sm font-bold shadow-sm ${getScoreColor(spot.weatherScore)}`}>
-                        <Star size={14} className="inline mr-1" />
+                      <div className={`px-3 py-1 rounded-full text-sm font-bold ${getScoreColor(spot.weatherScore)}`}>
                         {spot.weatherScore}%
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mb-3">
-                      <div className="flex items-center gap-2 bg-white/50 rounded-lg p-2">
-                        <Thermometer className="text-red-500" size={18} />
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                        <Thermometer className="text-red-500" size={20} />
                         <div>
-                          <div className="font-bold">{spot.temperature}°C</div>
+                          <div className="font-semibold">{spot.temperature}°C</div>
                           <div className="text-xs text-gray-600">Max: {spot.maxTemp}°C</div>
                         </div>
                       </div>
                       {searchType === 'sonnenschein' ? (
-                        <div className="flex items-center gap-2 bg-white/50 rounded-lg p-2">
-                          <Sun className="text-yellow-500" size={18} />
+                        <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                          <Sun className="text-yellow-500" size={20} />
                           <div>
-                            <div className="font-bold">{spot.sunHours}h</div>
+                            <div className="font-semibold">{spot.sunHours}h</div>
                             <div className="text-xs text-gray-600">
                               {spot.totalDays > 1 ? 'Sonne pro Tag' : 'Sonnenschein'}
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 bg-white/50 rounded-lg p-2">
-                          <div className="text-blue-500 text-lg">❄️</div>
+                        <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                          <div className="text-2xl">❄️</div>
                           <div>
-                            <div className="font-bold">{spot.forecast}</div>
+                            <div className="font-semibold">{spot.forecast}</div>
                             <div className="text-xs text-gray-600">Wetter</div>
                           </div>
                         </div>
                       )}
                     </div>
 
-                    <div className="text-sm bg-white/70 rounded-lg p-2 mb-3">
-                      <strong>Vorhersage:</strong> <span className="font-medium">{spot.forecast}</span>
+                    <div className="text-sm bg-gray-50 rounded-xl p-3 mb-4">
+                      <strong>Vorhersage:</strong> {spot.forecast}
                       {searchType === 'sonnenschein' && spot.rainHours > 0 && (
-                        <span className="text-blue-600 ml-2">({spot.rainHours}h Regen{spot.totalDays > 1 ? ' pro Tag' : ''})</span>
+                        <span className="text-blue-600 ml-2">({spot.rainHours}h Regen{spot.totalDays > 1 ? '/Tag' : ''})</span>
                       )}
                     </div>
 
@@ -820,217 +789,110 @@ return (
                         onClick={() => {
                           const bookingUrl = `https://www.booking.com/searchresults.html?aid=12345678&label=sonnensuche&dest_type=city&ss=${encodeURIComponent(spot.name)}&checkin=${startDate}&checkout=${endDate}&adults=2&currency=EUR`;
                           window.open(bookingUrl, '_blank');
-                          console.log('Booking clicked:', spot.name, spot.weatherScore);
                         }}
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
+                        className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
                       >
-                        🏨 Unterkunft in {spot.name} finden
-                        <span className="text-sm opacity-90">→ ab 29€</span>
+                        <Home size={18} />
+                        Unterkunft finden
                       </button>
                       
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <button
-                          onClick={() => window.open('https://www.airbnb.de/', '_blank')}
-                          className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-3 rounded text-sm transition-colors"
+                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(spot.name)}/@${spot.lat},${spot.lon},12z`, '_blank')}
+                          className="bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium py-2 px-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm border-2 border-gray-200"
                         >
-                          🏠 Airbnb
+                          <Map size={16} />
+                          Route planen
                         </button>
                         <button
                           onClick={() => window.open(`https://de.hotels.com/search.do?destination=${encodeURIComponent(spot.name)}&startDate=${startDate}&endDate=${endDate}`, '_blank')}
-                          className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-3 rounded text-sm transition-colors"
+                          className="bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium py-2 px-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm border-2 border-gray-200"
                         >
-                          🏨 Hotels.com
-                        </button>
-                        <button
-                          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(spot.name)}/@${spot.lat},${spot.lon},12z`, '_blank')}
-                          className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-3 rounded text-sm transition-colors"
-                        >
-                          📍 Route
+                          <Home size={16} />
+                          Hotels
                         </button>
                       </div>
-                      
-                      <p className="text-xs text-gray-500 text-center">
-                        ⭐ Bei Buchung über unsere Partner unterstützt du Sonnensuche.com
-                      </p>
                     </div>
                   </div>
- {/* Werbung nach dem 2. Ergebnis (Index 1) für bessere Performance */}
+
+                  {/* Werbung nach bestimmten Indizes */}
                   {index === 1 && (
-                    <div className="col-span-full my-6 p-4 bg-white/90 rounded-lg text-center">
+                    <div className="md:col-span-2 my-4 p-6 bg-white/90 backdrop-blur-lg rounded-xl text-center">
                       <span className="text-xs text-gray-500">Gesponserte Angebote</span>
-                      <div className="bg-gray-200 h-24 flex items-center justify-center text-gray-500 rounded mt-2">
-                        [Google AdSense Banner 728x90]
+                      <div className="bg-gray-100 h-24 flex items-center justify-center text-gray-400 rounded mt-2">
+                        [Google AdSense Banner]
                       </div>
                     </div>
                   )}
 
-                  {/* Weitere Werbung nach dem 5. und 8. Ergebnis */}
                   {(index === 4 || index === 7) && (
-                    <div className="col-span-full my-4 p-4 bg-white/90 rounded-lg text-center">
+                    <div className="md:col-span-2 my-4 p-6 bg-white/90 backdrop-blur-lg rounded-xl text-center">
                       <span className="text-xs text-gray-500">Werbung</span>
-                      <div className="bg-gray-200 h-32 flex items-center justify-center text-gray-500 rounded mt-2">
-                        [Google AdSense Native Ad 336x280]
+                      <div className="bg-gray-100 h-32 flex items-center justify-center text-gray-400 rounded mt-2">
+                        [Google AdSense]
                       </div>
                     </div>
                   )}
-                </div>
+                </React.Fragment>
               ))}
             </div>
 
-            <div className="mt-8 p-6 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl">
-              <h3 className="text-xl font-bold mb-2">✅ Echte Live-Wetterdaten von OpenWeatherMap</h3>
-              <p className="text-green-100">
-                Diese Ergebnisse basieren auf aktuellen 5-Tage-Wettervorhersagen und helfen dir dabei, 
-                spontane Ausflüge und Kurzurlaube perfekt zu planen!
+            {/* Info Boxes */}
+            <div className="mt-12 bg-white/95 backdrop-blur-lg rounded-2xl p-8 text-center">
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">Echte Live-Wetterdaten</h3>
+              <p className="text-gray-600">
+                Diese Ergebnisse basieren auf aktuellen 5-Tage-Wettervorhersagen von OpenWeatherMap
+                und helfen dir dabei, spontane Ausflüge und Kurzurlaube perfekt zu planen!
               </p>
             </div>
 
-            <div className="mt-4 p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-center">
-              <h4 className="font-bold mb-2">🚀 Mehr Planungssicherheit gewünscht?</h4>
-              <p className="text-sm mb-3">Upgrade auf 16-Tage Wettervorhersage für nur 0,99€/Monat</p>
-              <button className="bg-white text-purple-600 font-semibold py-2 px-4 rounded hover:bg-purple-50 transition-colors">
-                ⭐ Premium aktivieren
-              </button>
-            </div>
-
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <strong>💡 Tipp:</strong> Unterkunft gefunden? Buche direkt über unsere Partner-Links 
-                und unterstütze die Weiterentwicklung von Sonnensuche.com!
-              </p>
-            </div>
-
-            {/* PWA Download Button - Nach den Ergebnissen */}
+            {/* PWA Install nach Ergebnissen */}
             {(showInstallPrompt || isIOS) && (
-              <div className="mt-8 bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 border-l-4 border-green-500">
-                <div className="text-center">
-                  <div className="relative inline-block mb-4">
-                    <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-full p-4 shadow-lg">
-                      <Sun className="text-yellow-300 animate-pulse" size={32} />
-                    </div>
-                    <div className="absolute -inset-2 bg-green-200 rounded-full opacity-30 animate-ping"></div>
-                  </div>
-                  
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">🎉 Perfekte Ergebnisse gefunden!</h3>
-                  <h4 className="text-xl font-bold text-gray-700 mb-2">📱 Jetzt Sonnensuche-App kostenlos installieren</h4>
-                  <p className="text-gray-600 mb-4">Für noch schnellere Wettersuchen in Zukunft - direkt vom Home-Bildschirm!</p>
-                  
-                  <button
-                    onClick={isIOS ? handleIOSInstall : handleInstallClick}
-                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-3 text-lg"
-                  >
-                    <Download size={24} />
-                    <Sun size={24} className="text-yellow-300 animate-pulse" />
-                    {isIOS ? 'iPhone Installationsanleitung anzeigen' : 'App jetzt installieren'}
-                    <Sun size={24} className="text-yellow-300 animate-pulse" />
-                  </button>
-                  
-                  <p className="text-sm text-gray-500 mt-3">
-                    ✅ Kostenlos • ✅ Ohne App Store • ✅ Funktioniert offline
-                  </p>
-                </div>
-
-                {/* iOS Installation Instructions */}
-                {isIOS && showIOSInstruct && (
-                  <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <h4 className="font-bold text-blue-800 mb-3 text-center">📲 So installierst du Sonnensuche auf dein iPhone:</h4>
-                    <div className="space-y-3 text-sm text-blue-700">
-                      <div className="flex items-start gap-3">
-                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-                        <p>Tippe auf das <strong>Teilen-Symbol</strong> unten in Safari (Quadrat mit Pfeil nach oben) 📤</p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-                        <p>Scrolle runter und wähle <strong>"Zum Home-Bildschirm hinzufügen"</strong> 📱</p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-                        <p>Tippe auf <strong>"Hinzufügen"</strong> - fertig! 🎉</p>
-                      </div>
-                    </div>
-                    <div className="mt-4 p-3 bg-green-100 rounded-lg border border-green-200">
-                      <p className="text-green-800 text-xs text-center">
-                        ✅ Die Sonnensuche-App erscheint dann als Icon auf deinem Home-Bildschirm!
-                      </p>
-                    </div>
-                  </div>
-                )}
+              <div className="mt-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 text-center text-white">
+                <h3 className="text-2xl font-bold mb-4">Perfekte Ergebnisse gefunden!</h3>
+                <p className="mb-6">Installiere die App für noch schnellere Wettersuchen</p>
+                <button
+                  onClick={isIOS ? handleIOSInstall : handleInstallClick}
+                  className="bg-white text-purple-600 font-semibold py-3 px-8 rounded-xl hover:shadow-lg transition-all"
+                >
+                  App installieren
+                </button>
               </div>
             )}
           </div>
         )}
 
-        <div className="mt-8 bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600 text-white rounded-xl p-6">
-          <h2 className="text-2xl font-bold mb-4 text-center">🌦 Sonnensuche.com - Die Revolution der Wettersuche</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-            <div className="text-center">
-              <div className="bg-white bg-opacity-20 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                <Search size={20} />
-              </div>
-              <h3 className="font-bold mb-2">Nie wieder im Regen stehen</h3>
-              <p>Suche nach dem Wetter, das du dir wünschst - nicht nach Orten! Finde spontan die sonnigsten Plätze in deiner Umgebung.</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-white bg-opacity-20 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                <MapPin size={20} />
-              </div>
-              <h3 className="font-bold mb-2">Perfekt für spontane Ausflügler</h3>
-              <p>Ideal für Kurzreisen, Camping und Outdoor-Abenteuer. 5-Tage Wettervorhersage für ganz Deutschland.</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-white bg-opacity-20 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                <Star size={20} />
-              </div>
-              <h3 className="font-bold mb-2">Intelligentes Ranking</h3>
-              <p>KI-basierte Bewertung für die besten Wetter-Spots in deiner Nähe. Präzise Prognosen von OpenWeatherMap.</p>
-            </div>
-          </div>
-          
-          {/* SEO Content Block */}
-          <div className="mt-8 p-4 bg-white/10 rounded-lg">
-            <h3 className="font-bold mb-3">Warum Sonnensuche für deine Ausflüge?</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <h4 className="font-semibold mb-2">🌅 Für Outdoor-Aktivitäten:</h4>
-                <ul className="space-y-1">
-                  <li>• Wandern bei perfektem Wetter</li>
-                  <li>• Camping ohne Regen</li>
-                  <li>• Radtouren im Sonnenschein</li>
-                  <li>• Strand- und Badeausflüge</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">🎯 Smart & Präzise:</h4>
-                <ul className="space-y-1">
-                  <li>• 5-Tage Wettervorhersage</li>
-                  <li>• Umkreissuche bis 500km</li>
-                  <li>• Echte Wetterdaten</li>
-                  <li>• Kostenlos & ohne Anmeldung</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* FAQ Section für SEO */}
-        <div className="mt-8 bg-white/95 backdrop-blur rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Häufige Fragen zur Wettersuche</h2>
+        {/* FAQ Section */}
+        <div className="mt-12 bg-white/95 backdrop-blur-lg rounded-2xl p-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+            Häufige Fragen
+          </h2>
           <div className="space-y-4">
             <div className="border-b border-gray-200 pb-4">
-              <h3 className="font-bold text-gray-800 mb-2">Wie funktioniert die Sonnensuche?</h3>
-              <p className="text-gray-600 text-sm">Sonnensuche durchsucht einen von dir gewählten Umkreis nach den Orten mit dem besten Wetter. Du gibst deinen Startort und gewünschten Zeitraum ein, und wir zeigen dir die sonnigsten Orte in deiner Nähe.</p>
+              <h3 className="font-semibold text-gray-800 mb-2">Wie funktioniert die Sonnensuche?</h3>
+              <p className="text-gray-600 text-sm">
+                Sonnensuche durchsucht einen von dir gewählten Umkreis nach den Orten mit dem besten Wetter. 
+                Du gibst deinen Startort und gewünschten Zeitraum ein, und wir zeigen dir die sonnigsten Orte in deiner Nähe.
+              </p>
             </div>
             <div className="border-b border-gray-200 pb-4">
-              <h3 className="font-bold text-gray-800 mb-2">Ist Sonnensuche kostenlos?</h3>
-              <p className="text-gray-600 text-sm">Ja, Sonnensuche ist komplett kostenlos! Du brauchst keine Anmeldung und kannst sofort loslegen. Wir finanzieren uns über Partnerschaften mit Buchungsportalen.</p>
+              <h3 className="font-semibold text-gray-800 mb-2">Ist Sonnensuche kostenlos?</h3>
+              <p className="text-gray-600 text-sm">
+                Ja, Sonnensuche ist komplett kostenlos! Du brauchst keine Anmeldung und kannst sofort loslegen.
+              </p>
             </div>
             <div className="border-b border-gray-200 pb-4">
-              <h3 className="font-bold text-gray-800 mb-2">Wie genau sind die Wettervorhersagen?</h3>
-              <p className="text-gray-600 text-sm">Wir nutzen professionelle Wetterdaten von OpenWeatherMap mit 5-Tage Vorhersagen. Die Daten werden alle 3 Stunden aktualisiert und sind sehr zuverlässig für die Planung von Ausflügen.</p>
+              <h3 className="font-semibold text-gray-800 mb-2">Wie genau sind die Wettervorhersagen?</h3>
+              <p className="text-gray-600 text-sm">
+                Wir nutzen professionelle Wetterdaten von OpenWeatherMap mit 5-Tage Vorhersagen. 
+                Die Daten werden alle 3 Stunden aktualisiert und sind sehr zuverlässig für die Planung von Ausflügen.
+              </p>
             </div>
-            <div className="pb-4">
-              <h3 className="font-bold text-gray-800 mb-2">Kann ich die App auf mein Handy installieren?</h3>
-              <p className="text-gray-600 text-sm">Ja! Sonnensuche ist eine Progressive Web App (PWA). Du kannst sie direkt über deinen Browser auf dem Smartphone installieren - ganz ohne App Store. Einfach "Zum Home-Bildschirm hinzufügen" wählen.</p>
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">Kann ich die App installieren?</h3>
+              <p className="text-gray-600 text-sm">
+                Ja! Sonnensuche ist eine Progressive Web App (PWA). Du kannst sie direkt über deinen Browser installieren.
+              </p>
             </div>
           </div>
         </div>
