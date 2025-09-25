@@ -457,7 +457,7 @@ useEffect(() => {
 
   // TEIL 1 ENDET HIER - FORTSETZUNG IN TEIL 2
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-600">
+   <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
       {/* Fixed Footer Ad */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-2 text-center text-xs z-50">
         <span className="text-gray-500">Anzeige</span>
