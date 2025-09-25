@@ -108,27 +108,16 @@ const SonnensucheApp = () => {
     'Papenburg', 'Meppen', 'Lingen', 'Nordhorn', 'Vechta', 'Cloppenburg'
   ];
 
-  // Intelligente Ortsnamen-Filterung
+  // Intelligente Ortsnamen-Filterung - REPARIERTE VERSION
   const getFilteredCityName = (cityName, distance, centerLocation) => {
     if (!cityName || cityName.length < 3) {
-      return `Region nahe ${centerLocation}`;
+      return `${Math.round(distance)} km von ${centerLocation}`;
     }
     
     const blacklistedTerms = getBlacklistedTerms();
     const acceptableCities = getAcceptableCities();
     
-    const isBlacklisted = blacklistedTerms.some(term => 
-      cityName.toLowerCase().includes(term.toLowerCase())
-    );
-    
-    if (isBlacklisted) {
-      if (distance < 20) {
-        return `Nahe ${centerLocation}`;
-      } else {
-        return `Region um ${centerLocation}`;
-      }
-    }
-    
+    // Prüfe ob der Ortsname in der Liste bekannter Städte ist
     const isAcceptable = acceptableCities.some(city => 
       cityName.toLowerCase().includes(city.toLowerCase()) ||
       city.toLowerCase().includes(cityName.toLowerCase())
@@ -138,11 +127,22 @@ const SonnensucheApp = () => {
       return cityName;
     }
     
-    if (distance < 15) {
-      return `Nahe ${centerLocation}`;
-    } else {
-      return `Region um ${centerLocation}`;
+    // Prüfe ob der Name blacklisted Begriffe enthält
+    const isBlacklisted = blacklistedTerms.some(term => 
+      cityName.toLowerCase().includes(term.toLowerCase())
+    );
+    
+    if (isBlacklisted) {
+      // Für sehr kleine Orte generischen Namen verwenden
+      if (distance < 20) {
+        return `${cityName} (${Math.round(distance)} km)`;
+      } else {
+        return `${Math.round(distance)} km von ${centerLocation}`;
+      }
     }
+    
+    // Für alle anderen Orte: Originalname verwenden, aber mit Entfernung
+    return `${cityName} (${Math.round(distance)} km)`;
   };
 
   // Geocoding
@@ -466,8 +466,7 @@ const SonnensucheApp = () => {
       setError('');
     }
   };
-
-  return (
+return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-400 p-4">
       <div className="fixed bottom-0 left-0 right-0 bg-gray-100 border-t border-gray-200 p-2 text-center text-xs z-50">
         <span className="text-gray-600">Werbung</span>
@@ -585,7 +584,7 @@ const SonnensucheApp = () => {
               }`}
             >
               <div className="text-center">
-                <div className="text-3xl mb-1">❄️</div>
+              <div className="text-3xl mb-1">❄️</div>
                 <h3 className="text-lg font-bold">Schnee & Winter</h3>
                 <p className="text-xs opacity-90">Kalte Temperaturen & Schneechancen</p>
               </div>
@@ -615,7 +614,8 @@ const SonnensucheApp = () => {
                 </button>
               </div>
             </div>
- <div className="md:col-span-2 lg:col-span-1">
+
+            <div className="md:col-span-2 lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Wie weit bist du bereit zu fahren? ({radius} km)
               </label>
@@ -862,8 +862,7 @@ const SonnensucheApp = () => {
                       </p>
                     </div>
                   </div>
-
-                  {/* Werbung nach dem 2. Ergebnis (Index 1) für bessere Performance */}
+ {/* Werbung nach dem 2. Ergebnis (Index 1) für bessere Performance */}
                   {index === 1 && (
                     <div className="col-span-full my-6 p-4 bg-white/90 rounded-lg text-center">
                       <span className="text-xs text-gray-500">Gesponserte Angebote</span>
