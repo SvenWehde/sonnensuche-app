@@ -515,6 +515,7 @@ useEffect(() => {
           <p className="text-white/80 text-base md:text-lg mt-1">
             Für alle spontanen Urlauber und Ausflügler
           </p>
+   </div>  
   <div style={{ marginTop: '20px' }}>
   <Link to="/blog" style={{
   backgroundColor: '#667eea',
