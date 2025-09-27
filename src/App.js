@@ -3,6 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { MapPin, Sun, Thermometer, Calendar, Search, Loader2, Settings, Eye, EyeOff, Star, Navigation, Clock, Download, ChevronRight, Map, Home } from 'lucide-react';
 import Impressum from './Impressum';
 import Datenschutz from './Datenschutz';
+import Blog from './Blog';
+import BlogArticle1 from './BlogArticle1';
+import BlogArticle2 from './BlogArticle2';
+import BlogArticle3 from './BlogArticle3';
 
 function App() {
   return (
@@ -11,6 +15,10 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
+  <Route path="/blog" element={<Blog />} />
+<Route path="/blog/sonnigste-orte-deutschland-2024" element={<BlogArticle1 />} />
+<Route path="/blog/oktober-wetter-beste-reiseziele" element={<BlogArticle2 />} />
+<Route path="/blog/wochenendtrip-wetter-planen" element={<BlogArticle3 />} />
       </Routes>
     </Router>
   );
@@ -507,6 +515,17 @@ useEffect(() => {
           <p className="text-white/80 text-base md:text-lg mt-1">
             Für alle spontanen Urlauber und Ausflügler
           </p>
+  <div style={{ marginTop: '20px' }}>
+  <Link to="/blog" style={{
+  backgroundColor: '#667eea',
+  color: 'white',
+  padding: '10px 20px',
+  borderRadius: '8px',
+  textDecoration: 'none',
+  fontWeight: 'bold'
+}}>
+  📚 Wetter-Ratgeber & Tipps
+</Link>
         </div>
 
         {/* Admin Settings */}
