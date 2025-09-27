@@ -516,6 +516,7 @@ useEffect(() => {
             Für alle spontanen Urlauber und Ausflügler
           </p>
    </div>  
+  
   <div style={{ marginTop: '20px' }}>
   <Link to="/blog" style={{
   backgroundColor: '#667eea',
