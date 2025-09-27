@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { MapPin, Sun, Thermometer, Calendar, Search, Loader2, Settings, Eye, EyeOff, Star, Navigation, Clock, Download, ChevronRight, Map, Home } from 'lucide-react';
+import Impressum from './Impressum';
+import Datenschutz from './Datenschutz';
 
-const SonnensucheApp = () => {
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/impressum" element={<Impressum />} />
+        <Route path="/datenschutz" element={<Datenschutz />} />
+      </Routes>
+    </Router>
+  );
+}
+
+const HomePage = () => {
   const [location, setLocation] = useState('');
   const [radius, setRadius] = useState(50);
   const [startDate, setStartDate] = useState('');
@@ -453,9 +468,8 @@ useEffect(() => {
       setError('');
     }
   };
-  
 
-  // TEIL 1 ENDET HIER - FORTSETZUNG IN TEIL 2
+  // TEIL 1 ENDET HIER - KOPIERE TEIL 2 DIREKT DAHINTER
   return (
    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
       {/* Fixed Footer Ad */}
@@ -902,8 +916,55 @@ useEffect(() => {
           </div>
         </div>
       </div>
+
+      {/* Footer mit Impressum und Datenschutz Links */}
+      <footer style={{
+        backgroundColor: '#1e293b',
+        color: 'white',
+        padding: '30px 20px',
+        textAlign: 'center',
+        marginTop: '80px',
+        borderTop: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '30px',
+            flexWrap: 'wrap',
+            marginBottom: '20px'
+          }}>
+            <Link to="/impressum" style={{
+              color: 'white',
+              textDecoration: 'none',
+              fontSize: '14px',
+              opacity: 0.9
+            }}>
+              Impressum
+            </Link>
+            <Link to="/datenschutz" style={{
+              color: 'white',
+              textDecoration: 'none',
+              fontSize: '14px',
+              opacity: 0.9
+            }}>
+              Datenschutzerklärung
+            </Link>
+          </div>
+          <p style={{ 
+            fontSize: '13px', 
+            opacity: 0.7,
+            marginTop: '15px'
+          }}>
+            © 2024 Sonnensuche. Alle Rechte vorbehalten.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
 
-export default SonnensucheApp;
+export default App;
