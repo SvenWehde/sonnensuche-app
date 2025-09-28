@@ -481,7 +481,7 @@ useEffect(() => {
   return (
    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
       {/* Fixed Footer Ad */}
-      <div className="fixed bottom-25 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-2 text-center text-xs z-50">
+      <div className="fixed bottom-23 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-2 text-center text-xs z-50">
         <span className="text-gray-500">Anzeige</span>
         <div className="bg-gray-100 h-12 flex items-center justify-center text-gray-400 rounded mt-1">
           [Google AdSense]
