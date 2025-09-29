@@ -481,7 +481,7 @@ useEffect(() => {
   return (
    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
       {/* Fixed Footer Ad */}
-      <div className="fixed bottom-23 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-2 text-center text-xs z-50">
+      <div className="fixed bottom-20 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-2 text-center text-xs z-50">
         <span className="text-gray-500">Anzeige</span>
         <div className="bg-gray-100 h-12 flex items-center justify-center text-gray-400 rounded mt-1">
           [Google AdSense]
@@ -516,19 +516,37 @@ useEffect(() => {
             Für alle spontanen Urlauber und Ausflügler
           </p>
    </div>  
-  
-  <div style={{ marginTop: '20px' }}>
+
+{/* Blog-Button - schöner und größer */}
+<div style={{ marginTop: '30px' }}>
   <Link to="/blog" style={{
-  backgroundColor: '#667eea',
-  color: 'white',
-  padding: '10px 20px',
-  borderRadius: '8px',
-  textDecoration: 'none',
-  fontWeight: 'bold'
-}}>
-  📚 Wetter-Ratgeber & Tipps
-</Link>
-        </div>
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)',
+    backdropFilter: 'blur(10px)',
+    color: 'white',
+    padding: '16px 32px',
+    borderRadius: '12px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '10px',
+    border: '2px solid rgba(255,255,255,0.3)',
+    fontSize: '17px',
+    boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+    transition: 'all 0.3s ease'
+  }}
+  onMouseOver={(e) => {
+    e.currentTarget.style.transform = 'translateY(-2px)';
+    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+  }}
+  onMouseOut={(e) => {
+    e.currentTarget.style.transform = 'translateY(0)';
+    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+  }}>
+    <span style={{ fontSize: '22px' }}>📚</span>
+    <span>Wetter-Ratgeber & Reisetipps</span>
+  </Link>
+</div>
 
         {/* Admin Settings */}
         {showSettings && (
