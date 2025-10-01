@@ -445,7 +445,15 @@ const HomePage = () => {
         return;
       }
       
-      const sortedResults = validResults.sort((a, b) => b.weatherScore - a.weatherScore);
+     const sortedResults = validResults.sort((a, b) => {
+  if (searchType === 'sonnenschein') {
+    // Bei Sonnenschein-Suche: Einfach nach höchster Temperatur sortieren
+    return b.maxTemp - a.maxTemp;
+  } else {
+    // Bei Schnee-Suche: Weiterhin nach weatherScore
+    return b.weatherScore - a.weatherScore;
+  }
+});
       
       const elapsedTime = Date.now() - searchStartTime;
       const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
