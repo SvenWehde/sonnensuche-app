@@ -15,10 +15,10 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/sonnigste-orte-deutschland-2024" element={<BlogArticle1 />} />
-        <Route path="/blog/oktober-wetter-beste-reiseziele" element={<BlogArticle2 />} />
-        <Route path="/blog/wochenendtrip-wetter-planen" element={<BlogArticle3 />} />
+  <Route path="/blog" element={<Blog />} />
+<Route path="/blog/sonnigste-orte-deutschland-2024" element={<BlogArticle1 />} />
+<Route path="/blog/oktober-wetter-beste-reiseziele" element={<BlogArticle2 />} />
+<Route path="/blog/wochenendtrip-wetter-planen" element={<BlogArticle3 />} />
       </Routes>
     </Router>
   );
@@ -66,14 +66,12 @@ const HomePage = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
-
-  // Service Worker Registration
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js');
-    }
-  }, []);
-
+// Service Worker Registration - füge das NACH dem ersten useEffect ein
+useEffect(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js');
+  }
+}, []);
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -224,7 +222,7 @@ const HomePage = () => {
     return points;
   };
 
-  // NEUE VERBESSERTE fetchWeatherData Funktion
+  // Wetterdaten abrufen
   const fetchWeatherData = async (lat, lon, currentApiKey) => {
     try {
       const response = await fetch(
@@ -241,80 +239,57 @@ const HomePage = () => {
       const endDateTime = new Date(endDate).getTime() + (24 * 60 * 60 * 1000);
       const totalDays = Math.ceil((endDateTime - startDateTime) / (24 * 60 * 60 * 1000));
       
-      // Sammle Daten für jeden Tag
-      const dailyData = {};
+    let totalTemp = 0;
+let maxTemp = -100;
+let totalCloudiness = 0;
+let totalRainHours = 0;
+let validReadings = 0;
+
+data.list.forEach(reading => {
+  const readingTime = reading.dt * 1000;
+  
+  if (readingTime >= startDateTime && readingTime <= endDateTime) {
+    validReadings++;
+    totalTemp += reading.main.temp;
+    maxTemp = Math.max(maxTemp, reading.main.temp);
+    totalCloudiness += reading.clouds.all;
+    
+    if (reading.rain && reading.rain['3h'] > 0) {
+      totalRainHours += 3;
+    }
+  }
+});
       
-      data.list.forEach(reading => {
-        const readingTime = reading.dt * 1000;
-        
-        if (readingTime >= startDateTime && readingTime <= endDateTime) {
-          const date = new Date(readingTime).toISOString().split('T')[0];
-          
-          if (!dailyData[date]) {
-            dailyData[date] = {
-              maxTemp: -100,
-              temps: [],
-              cloudiness: [],
-              rainHours: 0,
-              readings: 0
-            };
-          }
-          
-          dailyData[date].maxTemp = Math.max(dailyData[date].maxTemp, reading.main.temp);
-          dailyData[date].temps.push(reading.main.temp);
-          dailyData[date].cloudiness.push(reading.clouds.all);
-          dailyData[date].readings++;
-          
-          if (reading.rain && reading.rain['3h'] > 0) {
-            dailyData[date].rainHours += 3;
-          }
-        }
-      });
-      
-      if (Object.keys(dailyData).length === 0) {
+      if (validReadings === 0) {
         throw new Error('Keine Wetterdaten für den gewählten Zeitraum verfügbar');
       }
       
-      // Berechne Tageswerte
-      let totalMaxTemp = 0;
-      let totalSunHours = 0;
-      let totalRainHours = 0;
-      let totalAvgTemp = 0;
+      const avgTemp = totalTemp / validReadings;
+      const avgCloudiness = totalCloudiness / validReadings;
+      const avgRainHoursPerDay = totalRainHours / totalDays;
       
-      Object.values(dailyData).forEach(day => {
-        totalMaxTemp += day.maxTemp;
-        
-        const avgCloudiness = day.cloudiness.reduce((a, b) => a + b, 0) / day.cloudiness.length;
-        const avgTemp = day.temps.reduce((a, b) => a + b, 0) / day.temps.length;
-        totalAvgTemp += avgTemp;
-        
-        // Berechne Sonnenstunden für diesen Tag
-        const maxPossibleSunHours = 12;
-        const sunFactor = Math.max(0, (100 - avgCloudiness) / 100);
-        let daySunHours = maxPossibleSunHours * sunFactor;
-        
-        if (day.rainHours > 0) {
-          daySunHours = Math.max(0, daySunHours - (day.rainHours * 0.7));
-        }
-        
-        totalSunHours += daySunHours;
-        totalRainHours += day.rainHours;
-      });
+      const maxPossibleSunHours = 12;
+      const sunFactor = Math.max(0, (100 - avgCloudiness) / 100);
+      let avgSunHoursPerDay = maxPossibleSunHours * sunFactor;
       
-      const daysCount = Object.keys(dailyData).length;
-      const avgMaxTemp = totalMaxTemp / daysCount;
-      const avgSunHours = totalSunHours / daysCount;
-      const avgRainHoursPerDay = totalRainHours / daysCount;
-      const avgTemp = totalAvgTemp / daysCount;
+      if (avgRainHoursPerDay > 0) {
+        avgSunHoursPerDay = Math.max(0, avgSunHoursPerDay - (avgRainHoursPerDay * 0.7));
+      }
       
-      // Bestimme Vorhersage
+      const totalWeatherHours = avgSunHoursPerDay + avgRainHoursPerDay;
+      if (totalWeatherHours > 18) {
+        const factor = 18 / totalWeatherHours;
+        avgSunHoursPerDay *= factor;
+        avgRainHoursPerDay *= factor;
+      }
+      
       let forecast;
       if (searchType === 'sonnenschein') {
         if (avgRainHoursPerDay > 4) {
           forecast = 'Regnerisch';
-        } else if (avgSunHours > 7) {
+        } else if (avgSunHoursPerDay > 7) {
           forecast = 'Sonnig';
-        } else if (avgSunHours > 4) {
+        } else if (avgSunHoursPerDay > 4) {
           forecast = 'Bewölkt';
         } else {
           forecast = 'Bedeckt';
@@ -329,40 +304,34 @@ const HomePage = () => {
         }
       }
       
-      // Berechne Weather Score mit stärkerer Gewichtung der Maximaltemperatur
       let weatherScore;
-if (searchType === 'sonnenschein') {
-  // Direkte Temperatur-Bewertung: Temperatur × 3
-  const tempScore = avgMaxTemp * 3;
-  const sunScore = (avgSunHours / 12) * 100;
-  const rainPenalty = Math.min(30, avgRainHoursPerDay * 5);
-  
-  // 60% Temperatur, 40% Sonne, minus Regen-Strafe
-  weatherScore = Math.round(Math.max(0, Math.min(100, 
-    tempScore * 0.6 + sunScore * 0.4 - rainPenalty
-  )));
-} else {
-  const tempScore = Math.max(0, Math.min(100, (10 - avgTemp) * 10));
-  const snowScore = avgTemp < 2 ? 80 : 20;
-  weatherScore = Math.round(tempScore * 0.7 + snowScore * 0.3);
-}
+      if (searchType === 'sonnenschein') {
+        const tempScore = Math.max(0, Math.min(100, (avgTemp + 10) * 2.5));
+        const sunScore = Math.max(0, Math.min(100, (avgSunHoursPerDay / 12) * 100));
+        const rainPenalty = Math.min(30, avgRainHoursPerDay * 5);
+        weatherScore = Math.round(Math.max(0, tempScore * 0.6 + sunScore * 0.4 - rainPenalty));
+      } else {
+        const tempScore = Math.max(0, Math.min(100, (10 - avgTemp) * 10));
+        const snowScore = avgTemp < 2 ? 80 : 20;
+        weatherScore = Math.round(tempScore * 0.7 + snowScore * 0.3);
+      }
       
       return {
         avgTemp: Math.round(avgTemp * 10) / 10,
-        maxTemp: Math.round(avgMaxTemp * 10) / 10,
-        sunHours: Math.round(avgSunHours * 10) / 10,
+        maxTemp: Math.round(maxTemp * 10) / 10,
+        sunHours: Math.round(avgSunHoursPerDay * 10) / 10,
         rainHours: Math.round(avgRainHoursPerDay * 10) / 10,
         weatherScore: weatherScore,
         cityName: data.city.name,
         totalDays: totalDays,
-        forecast: forecast,
-        isOneDay: totalDays === 1
+        forecast: forecast
       };
     } catch (error) {
       console.error('Wetter-API Fehler:', error);
       return null;
     }
   };
+
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -431,8 +400,7 @@ if (searchType === 'sonnenschein') {
             weatherScore: weather.weatherScore,
             distance: point.distance,
             forecast: weather.forecast,
-            totalDays: weather.totalDays,
-            isOneDay: weather.isOneDay
+            totalDays: weather.totalDays
           };
         }
         return null;
@@ -449,15 +417,7 @@ if (searchType === 'sonnenschein') {
         return;
       }
       
-     const sortedResults = validResults.sort((a, b) => {
-  if (searchType === 'sonnenschein') {
-    // Bei Sonnenschein-Suche: Einfach nach höchster Temperatur sortieren
-    return b.maxTemp - a.maxTemp;
-  } else {
-    // Bei Schnee-Suche: Weiterhin nach weatherScore
-    return b.weatherScore - a.weatherScore;
-  }
-});
+      const sortedResults = validResults.sort((a, b) => b.weatherScore - a.weatherScore);
       
       const elapsedTime = Date.now() - searchStartTime;
       const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
@@ -517,8 +477,9 @@ if (searchType === 'sonnenschein') {
     }
   };
 
+  // TEIL 1 ENDET HIER - KOPIERE TEIL 2 DIREKT DAHINTER
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
+   <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
       {/* Fixed Footer Ad */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-2 text-center text-xs z-50">
         <span className="text-gray-500">Anzeige</span>
@@ -554,38 +515,38 @@ if (searchType === 'sonnenschein') {
           <p className="text-white/80 text-base md:text-lg mt-1">
             Für alle spontanen Urlauber und Ausflügler
           </p>
-        </div>
+   </div>  
 
-        {/* Blog-Button */}
-        <div style={{ marginTop: '30px', textAlign: 'center' }}>
-          <Link to="/blog" style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)',
-            backdropFilter: 'blur(10px)',
-            color: 'white',
-            padding: '16px 32px',
-            borderRadius: '12px',
-            textDecoration: 'none',
-            fontWeight: '600',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-            border: '2px solid rgba(255,255,255,0.3)',
-            fontSize: '17px',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
-          }}>
-            <span style={{ fontSize: '22px' }}>📚</span>
-            <span>Wetter-Ratgeber & Reisetipps</span>
-          </Link>
-        </div>
+{/* Blog-Button - schöner und größer */}
+<div style={{ marginTop: '30px' }}>
+  <Link to="/blog" style={{
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)',
+    backdropFilter: 'blur(10px)',
+    color: 'white',
+    padding: '16px 32px',
+    borderRadius: '12px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '10px',
+    border: '2px solid rgba(255,255,255,0.3)',
+    fontSize: '17px',
+    boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+    transition: 'all 0.3s ease'
+  }}
+  onMouseOver={(e) => {
+    e.currentTarget.style.transform = 'translateY(-2px)';
+    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+  }}
+  onMouseOut={(e) => {
+    e.currentTarget.style.transform = 'translateY(0)';
+    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+  }}>
+    <span style={{ fontSize: '22px' }}>📚</span>
+    <span>Wetter-Ratgeber & Reisetipps</span>
+  </Link>
+</div>
 
         {/* Admin Settings */}
         {showSettings && (
@@ -635,57 +596,57 @@ if (searchType === 'sonnenschein') {
             Was suchst du?
           </h2>
 
-          {/* Search Type Selector */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <button
-              onClick={() => {
-                setSearchType('sonnenschein');
-                setTimeout(() => {
-                  const element = document.getElementById('location-input');
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }
-                }, 100);
-              }}
-              className={`p-6 rounded-xl border-2 transition-all ${
-                searchType === 'sonnenschein'
-                  ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white border-transparent shadow-lg scale-105' 
-                  : 'bg-white border-gray-200 hover:border-yellow-300 hover:shadow-md'
-              }`}
-            >
-              <Sun className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-              <h3 className="text-lg font-semibold mb-1">Sonnenschein</h3>
-              <p className="text-sm opacity-80">Warme Temperaturen & viel Sonne</p>
-            </button>
-            
-            <button
-              onClick={() => {
-                setSearchType('schnee');
-                setTimeout(() => {
-                  const element = document.getElementById('location-input');
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }
-                }, 100);
-              }}
-              className={`p-6 rounded-xl border-2 transition-all ${
-                searchType === 'schnee'
-                  ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white border-transparent shadow-lg scale-105' 
-                  : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
-              }`}
-            >
-              <div className="w-8 h-8 mx-auto mb-2 text-2xl">❄️</div>
-              <h3 className="text-lg font-semibold mb-1">Schnee & Winter</h3>
-              <p className="text-sm opacity-80">Kalte Temperaturen & Schneechancen</p>
-            </button>
-          </div>
+{/* Search Type Selector */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+ <button
+  onClick={() => {
+    setSearchType('sonnenschein');
+    setTimeout(() => {
+      const element = document.getElementById('location-input');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  }}
+  className={`p-6 rounded-xl border-2 transition-all ${
+    searchType === 'sonnenschein'
+        ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white border-transparent shadow-lg scale-105' 
+        : 'bg-white border-gray-200 hover:border-yellow-300 hover:shadow-md'
+    }`}
+  >
+    <Sun className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
+    <h3 className="text-lg font-semibold mb-1">Sonnenschein</h3>
+    <p className="text-sm opacity-80">Warme Temperaturen & viel Sonne</p>
+  </button>
+  
+ <button
+  onClick={() => {
+    setSearchType('schnee');
+    setTimeout(() => {
+      const element = document.getElementById('location-input');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  }}
+  className={`p-6 rounded-xl border-2 transition-all ${
+    searchType === 'schnee'
+        ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white border-transparent shadow-lg scale-105' 
+        : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
+    }`}
+  >
+    <div className="w-8 h-8 mx-auto mb-2 text-2xl">❄️</div>
+    <h3 className="text-lg font-semibold mb-1">Schnee & Winter</h3>
+    <p className="text-sm opacity-80">Kalte Temperaturen & Schneechancen</p>
+  </button>
+</div>
          
           {/* Search Form */}
           <div className="space-y-6">
-            <div id="location-input">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Von wo startest du?
-              </label>
+           <div id="location-input">
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Von wo startest du?
+  </label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -762,7 +723,7 @@ if (searchType === 'sonnenschein') {
 
           <button
             onClick={handleSearch}
-            disabled={loading || !searchType}
+            disabled={loading}
             className="w-full mt-8 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] hover:shadow-xl disabled:scale-100 disabled:shadow-none flex items-center justify-center gap-3 text-lg"
           >
             {loading ? (
@@ -779,7 +740,7 @@ if (searchType === 'sonnenschein') {
           </button>
         </div>
 
-        {/* PWA Install Prompt */}
+        {/* PWA Install Prompt - Vor Ergebnissen */}
         {(showInstallPrompt || isIOS) && results.length === 0 && (
           <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl p-8 mb-8 border-l-4 border-purple-500">
             <div className="text-center">
@@ -827,7 +788,7 @@ if (searchType === 'sonnenschein') {
           </div>
         )}
 
-        {/* Results - HIER IST DIE WICHTIGE ÄNDERUNG */}
+        {/* Results */}
         {results.length > 0 && (
           <div>
             <h2 className="text-3xl font-light text-white text-center mb-8">
@@ -861,28 +822,21 @@ if (searchType === 'sonnenschein') {
                       </div>
                     </div>
 
-                    {/* HIER IST DIE NEUE ANZEIGE */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
                         <Thermometer className="text-red-500" size={20} />
                         <div>
-                          <div className="font-semibold">
-                            {spot.maxTemp}°C
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            {spot.isOneDay ? 'Max. Temperatur' : 'Ø Max-Temp'}
-                          </div>
+                          <div className="font-semibold">{spot.temperature}°C</div>
+                          <div className="text-xs text-gray-600">Max: {spot.maxTemp}°C</div>
                         </div>
                       </div>
                       {searchType === 'sonnenschein' ? (
                         <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
                           <Sun className="text-yellow-500" size={20} />
                           <div>
-                            <div className="font-semibold">
-                              {spot.sunHours}h
-                            </div>
+                            <div className="font-semibold">{spot.sunHours}h</div>
                             <div className="text-xs text-gray-600">
-                              {spot.isOneDay ? 'Sonnenstunden' : 'Ø Sonne/Tag'}
+                              {spot.totalDays > 1 ? 'Sonne pro Tag' : 'Sonnenschein'}
                             </div>
                           </div>
                         </div>
