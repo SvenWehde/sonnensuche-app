@@ -598,10 +598,18 @@ useEffect(() => {
 
 {/* Search Type Selector */}
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-  <button
-    onClick={() => setSearchType('sonnenschein')}
-    className={`p-6 rounded-xl border-2 transition-all ${
-      searchType === 'sonnenschein' 
+ <button
+  onClick={() => {
+    setSearchType('sonnenschein');
+    setTimeout(() => {
+      const element = document.getElementById('location-input');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  }}
+  className={`p-6 rounded-xl border-2 transition-all ${
+    searchType === 'sonnenschein'
         ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white border-transparent shadow-lg scale-105' 
         : 'bg-white border-gray-200 hover:border-yellow-300 hover:shadow-md'
     }`}
@@ -611,10 +619,18 @@ useEffect(() => {
     <p className="text-sm opacity-80">Warme Temperaturen & viel Sonne</p>
   </button>
   
-  <button
-    onClick={() => setSearchType('schnee')}
-    className={`p-6 rounded-xl border-2 transition-all ${
-      searchType === 'schnee' 
+ <button
+  onClick={() => {
+    setSearchType('schnee');
+    setTimeout(() => {
+      const element = document.getElementById('location-input');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  }}
+  className={`p-6 rounded-xl border-2 transition-all ${
+    searchType === 'schnee'
         ? 'bg-gradient-to-br from-blue-400 to-cyan-400 text-white border-transparent shadow-lg scale-105' 
         : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
     }`}
@@ -627,10 +643,10 @@ useEffect(() => {
          
           {/* Search Form */}
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Von wo startest du?
-              </label>
+           <div id="location-input">
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Von wo startest du?
+  </label>
               <div className="flex gap-2">
                 <input
                   type="text"
