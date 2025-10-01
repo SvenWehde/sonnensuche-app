@@ -331,17 +331,21 @@ const HomePage = () => {
       
       // Berechne Weather Score mit stärkerer Gewichtung der Maximaltemperatur
       let weatherScore;
-      if (searchType === 'sonnenschein') {
-        // 60% Maximaltemperatur, 40% Sonnenstunden
-        const tempScore = Math.max(0, Math.min(100, (avgMaxTemp / 30) * 100));
-        const sunScore = Math.max(0, Math.min(100, (avgSunHours / 12) * 100));
-        const rainPenalty = Math.min(30, avgRainHoursPerDay * 5);
-        weatherScore = Math.round(Math.max(0, tempScore * 0.6 + sunScore * 0.4 - rainPenalty));
-      } else {
-        const tempScore = Math.max(0, Math.min(100, (10 - avgTemp) * 10));
-        const snowScore = avgTemp < 2 ? 80 : 20;
-        weatherScore = Math.round(tempScore * 0.7 + snowScore * 0.3);
-      }
+if (searchType === 'sonnenschein') {
+  // Direkte Temperatur-Bewertung: Temperatur × 3
+  const tempScore = avgMaxTemp * 3;
+  const sunScore = (avgSunHours / 12) * 100;
+  const rainPenalty = Math.min(30, avgRainHoursPerDay * 5);
+  
+  // 60% Temperatur, 40% Sonne, minus Regen-Strafe
+  weatherScore = Math.round(Math.max(0, Math.min(100, 
+    tempScore * 0.6 + sunScore * 0.4 - rainPenalty
+  )));
+} else {
+  const tempScore = Math.max(0, Math.min(100, (10 - avgTemp) * 10));
+  const snowScore = avgTemp < 2 ? 80 : 20;
+  weatherScore = Math.round(tempScore * 0.7 + snowScore * 0.3);
+}
       
       return {
         avgTemp: Math.round(avgTemp * 10) / 10,
