@@ -242,52 +242,57 @@ const HomePage = () => {
       const totalDays = Math.ceil((endDateTime - startDateTime) / (24 * 60 * 60 * 1000));
       
       // Sammle Daten für jeden Tag
-      const dailyData = {};
-      
-      data.list.forEach(reading => {
-        const readingTime = reading.dt * 1000;
-        
-        if (readingTime >= startDateTime && readingTime <= endDateTime) {
-          const date = new Date(readingTime).toISOString().split('T')[0];
-          
-          if (!dailyData[date]) {
-            dailyData[date] = {
-              maxTemp: -100,
-              temps: [],
-              cloudiness: [],
-              rainHours: 0,
-              readings: 0
-            };
-          }
-          
-          // WICHTIG: Verwende temp_max statt temp für die Maximaltemperatur!
-          dailyData[date].maxTemp = Math.max(dailyData[date].maxTemp, reading.main.temp_max);
-          dailyData[date].temps.push(reading.main.temp);
-          dailyData[date].cloudiness.push(reading.clouds.all);
-          dailyData[date].readings++;
-          
-          if (reading.rain && reading.rain['3h'] > 0) {
-            dailyData[date].rainHours += 3;
-          }
-        }
-      });
+const dailyData = {};
+
+data.list.forEach(reading => {
+  const readingTime = reading.dt * 1000;
+  
+  if (readingTime >= startDateTime && readingTime <= endDateTime) {
+    const date = new Date(readingTime).toISOString().split('T')[0];
+    
+    if (!dailyData[date]) {
+      dailyData[date] = {
+        allTemperatures: [], // NEU: Sammle ALLE Temperaturen
+        temps: [],
+        cloudiness: [],
+        rainHours: 0,
+        readings: 0
+      };
+    }
+    
+    // NEU: Sammle alle Temperaturwerte
+    dailyData[date].allTemperatures.push(reading.main.temp);
+    dailyData[date].allTemperatures.push(reading.main.temp_max);
+    dailyData[date].allTemperatures.push(reading.main.temp_min);
+    
+    dailyData[date].temps.push(reading.main.temp);
+    dailyData[date].cloudiness.push(reading.clouds.all);
+    dailyData[date].readings++;
+    
+    if (reading.rain && reading.rain['3h'] > 0) {
+      dailyData[date].rainHours += 3;
+    }
+  }
+});
       
       if (Object.keys(dailyData).length === 0) {
         throw new Error('Keine Wetterdaten für den gewählten Zeitraum verfügbar');
       }
       
       // Berechne Tageswerte
-      let totalMaxTemp = 0;
-      let totalSunHours = 0;
-      let totalRainHours = 0;
-      let totalAvgTemp = 0;
-      
-      Object.values(dailyData).forEach(day => {
-        totalMaxTemp += day.maxTemp;
-        
-        const avgCloudiness = day.cloudiness.reduce((a, b) => a + b, 0) / day.cloudiness.length;
-        const avgTemp = day.temps.reduce((a, b) => a + b, 0) / day.temps.length;
-        totalAvgTemp += avgTemp;
+let totalMaxTemp = 0;
+let totalSunHours = 0;
+let totalRainHours = 0;
+let totalAvgTemp = 0;
+
+Object.values(dailyData).forEach(day => {
+  // NEU: Finde das ECHTE Maximum aller Temperaturen des Tages
+  const realMaxTemp = Math.max(...day.allTemperatures);
+  totalMaxTemp += realMaxTemp;
+  
+  const avgCloudiness = day.cloudiness.reduce((a, b) => a + b, 0) / day.cloudiness.length;
+  const avgTemp = day.temps.reduce((a, b) => a + b, 0) / day.temps.length;
+  totalAvgTemp += avgTemp;
         
         // Berechne Sonnenstunden für diesen Tag
         const maxPossibleSunHours = 12;
