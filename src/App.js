@@ -224,7 +224,7 @@ const HomePage = () => {
     return points;
   };
 
-  // NEUE VERBESSERTE fetchWeatherData Funktion
+  // KORRIGIERTE fetchWeatherData Funktion
   const fetchWeatherData = async (lat, lon, currentApiKey) => {
     try {
       const response = await fetch(
@@ -260,7 +260,8 @@ const HomePage = () => {
             };
           }
           
-          dailyData[date].maxTemp = Math.max(dailyData[date].maxTemp, reading.main.temp);
+          // WICHTIG: Verwende temp_max statt temp für die Maximaltemperatur!
+          dailyData[date].maxTemp = Math.max(dailyData[date].maxTemp, reading.main.temp_max);
           dailyData[date].temps.push(reading.main.temp);
           dailyData[date].cloudiness.push(reading.clouds.all);
           dailyData[date].readings++;
@@ -329,14 +330,29 @@ const HomePage = () => {
         }
       }
       
-      // Berechne Weather Score mit stärkerer Gewichtung der Maximaltemperatur
+      // VERBESSERTES Weather Score System
       let weatherScore;
       if (searchType === 'sonnenschein') {
-        // 60% Maximaltemperatur, 40% Sonnenstunden
-        const tempScore = Math.max(0, Math.min(100, (avgMaxTemp / 30) * 100));
-        const sunScore = Math.max(0, Math.min(100, (avgSunHours / 12) * 100));
+        // Temperatur stark gewichtet
+        let tempScore;
+        if (avgMaxTemp >= 25) {
+          tempScore = 90 + Math.min(10, (avgMaxTemp - 25) * 2);
+        } else if (avgMaxTemp >= 20) {
+          tempScore = 70 + ((avgMaxTemp - 20) * 4);
+        } else if (avgMaxTemp >= 15) {
+          tempScore = 50 + ((avgMaxTemp - 15) * 4);
+        } else if (avgMaxTemp >= 10) {
+          tempScore = 20 + ((avgMaxTemp - 10) * 6);
+        } else {
+          // Unter 10°C sehr niedrige Scores
+          tempScore = Math.max(0, avgMaxTemp * 2);
+        }
+        
+        const sunScore = Math.max(0, Math.min(100, (avgSunHours / 10) * 100));
         const rainPenalty = Math.min(30, avgRainHoursPerDay * 5);
-        weatherScore = Math.round(Math.max(0, tempScore * 0.6 + sunScore * 0.4 - rainPenalty));
+        
+        // 70% Temperatur, 30% Sonne
+        weatherScore = Math.round(Math.max(0, tempScore * 0.7 + sunScore * 0.3 - rainPenalty));
       } else {
         const tempScore = Math.max(0, Math.min(100, (10 - avgTemp) * 10));
         const snowScore = avgTemp < 2 ? 80 : 20;
@@ -359,6 +375,7 @@ const HomePage = () => {
       return null;
     }
   };
+
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -435,7 +452,12 @@ const HomePage = () => {
       });
       
       const weatherResults = await Promise.all(weatherPromises);
-      const validResults = weatherResults.filter(result => result !== null);
+      let validResults = weatherResults.filter(result => result !== null);
+      
+      // WICHTIG: Filtere im Sonnenschein-Modus Orte mit zu niedriger Temperatur
+      if (searchType === 'sonnenschein') {
+        validResults = validResults.filter(result => result.maxTemp >= 10 || result.weatherScore >= 30);
+      }
       
       if (validResults.length === 0) {
         setError('Keine Wetterdaten gefunden. Bitte versuche es später nochmal.');
@@ -462,7 +484,6 @@ const HomePage = () => {
       setTimeout(() => setLoading(false), remainingTime);
     }
   };
-
   const getWeatherIcon = (forecast) => {
     if (searchType === 'sonnenschein') {
       switch (forecast) {
@@ -815,7 +836,7 @@ const HomePage = () => {
           </div>
         )}
 
-        {/* Results - HIER IST DIE WICHTIGE ÄNDERUNG */}
+        {/* Results */}
         {results.length > 0 && (
           <div>
             <h2 className="text-3xl font-light text-white text-center mb-8">
@@ -849,7 +870,6 @@ const HomePage = () => {
                       </div>
                     </div>
 
-                    {/* HIER IST DIE NEUE ANZEIGE */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
                         <Thermometer className="text-red-500" size={20} />
