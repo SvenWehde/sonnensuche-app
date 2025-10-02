@@ -358,7 +358,8 @@ const HomePage = () => {
       console.error('Wetter-API Fehler:', error);
       return null;
     }
-    const getCurrentLocation = () => {
+  };
+  const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -1056,4 +1057,3 @@ const HomePage = () => {
 };
 
 export default App;
-  };
