@@ -236,7 +236,10 @@ const HomePage = () => {
       }
       
       const data = await response.json();
-       // ===== DEBUG START =====
+      // ===== DEBUG START =====
+const startDateTime = new Date(startDate).getTime();
+const endDateTime = new Date(endDate).getTime() + (24 * 60 * 60 * 1000);
+
 console.log('');
 console.log('===========================================');
 console.log(`📍 ORT: ${data.city.name}`);
@@ -248,8 +251,6 @@ console.log('-------------------------------------------');
 const relevantData = [];
 data.list.forEach(reading => {
   const readingTime = reading.dt * 1000;
-  const startDateTime = new Date(startDate).getTime();
-  const endDateTime = new Date(endDate).getTime() + (24 * 60 * 60 * 1000);
   
   if (readingTime >= startDateTime && readingTime <= endDateTime) {
     const dateTime = new Date(readingTime);
@@ -276,8 +277,8 @@ console.log(`🔥 HÖCHSTE TEMPERATUR: ${maxFound}°C`);
 console.log('===========================================');
 console.log('');
 // ===== DEBUG ENDE =====
-      
-      const totalDays = Math.ceil((endDateTime - startDateTime) / (24 * 60 * 60 * 1000));
+
+const totalDays = Math.ceil((endDateTime - startDateTime) / (24 * 60 * 60 * 1000));
       
       // Sammle Daten für jeden Tag
 const dailyData = {};
