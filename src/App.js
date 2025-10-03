@@ -163,43 +163,77 @@ const HomePage = () => {
   };
 
   // Geocoding
-  const geocodeLocation = async (locationName, currentApiKey) => {
-    try {
-      const response = await fetch(
+const geocodeLocation = async (locationName, currentApiKey) => {
+  try {
+    // Zuerst versuchen wir es mit ", Deutschland" für deutsche Orte
+    let response = await fetch(
+      `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)},DE&limit=5&appid=${currentApiKey}`
+    );
+    let data = await response.json();
+    
+    // Wenn kein deutscher Ort gefunden wurde, suche weltweit
+    if (data.length === 0) {
+      response = await fetch(
         `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)}&limit=5&appid=${currentApiKey}`
       );
-      const data = await response.json();
+      data = await response.json();
+    }
+    
+    if (data.length === 0) {
+      throw new Error('Ort nicht gefunden');
+    }
+    
+    // Wenn mehrere Orte gefunden wurden, zeige Auswahl
+    if (data.length > 1) {
+      // Priorisiere deutsche Orte
+      const germanResults = data.filter(place => place.country === 'DE');
+      if (germanResults.length > 0) {
+        // Nutze den ersten deutschen Ort
+        const bestResult = germanResults[0];
+        console.log(`Gewählt: ${bestResult.name}, ${bestResult.state || ''}, ${bestResult.country}`);
+        return {
+          lat: bestResult.lat,
+          lon: bestResult.lon,
+          name: bestResult.name,
+          country: bestResult.country
+        };
+      }
+    }
+    
+    // Sortiere nach Priorität (deutsche Orte zuerst, dann nach Bevölkerung)
+    const sortedResults = data.sort((a, b) => {
+      // Deutsche Orte haben Priorität
+      if (a.country === 'DE' && b.country !== 'DE') return -1;
+      if (a.country !== 'DE' && b.country === 'DE') return 1;
       
-      if (data.length === 0) {
-        throw new Error('Ort nicht gefunden');
+      // Dann europäische Orte
+      const europeanCountries = ['AT', 'CH', 'NL', 'BE', 'LU', 'PL', 'CZ', 'DK', 'FR'];
+      const aIsEuropean = europeanCountries.includes(a.country);
+      const bIsEuropean = europeanCountries.includes(b.country);
+      if (aIsEuropean && !bIsEuropean) return -1;
+      if (!aIsEuropean && bIsEuropean) return 1;
+      
+      // Dann nach Bevölkerung falls vorhanden
+      if (a.population && b.population) {
+        return b.population - a.population;
       }
       
-      const sortedResults = data.sort((a, b) => {
-        const knownCities = getAcceptableCities();
-        const aIsKnown = knownCities.some(city => a.name.toLowerCase().includes(city.toLowerCase()));
-        const bIsKnown = knownCities.some(city => b.name.toLowerCase().includes(city.toLowerCase()));
-        
-        if (aIsKnown && !bIsKnown) return -1;
-        if (!aIsKnown && bIsKnown) return 1;
-        
-        if (a.population && b.population) {
-          return b.population - a.population;
-        }
-        
-        return 0;
-      });
-      
-      const bestResult = sortedResults[0];
-      return {
-        lat: bestResult.lat,
-        lon: bestResult.lon,
-        name: bestResult.name,
-        country: bestResult.country
-      };
-    } catch (error) {
-      throw new Error(`Geocoding fehler: ${error.message}`);
-    }
-  };
+      return 0;
+    });
+    
+    const bestResult = sortedResults[0];
+    console.log(`Ausgewählt: ${bestResult.name}, ${bestResult.state || ''}, ${bestResult.country}`);
+    
+    return {
+      lat: bestResult.lat,
+      lon: bestResult.lon,
+      name: bestResult.name,
+      country: bestResult.country
+    };
+  } catch (error) {
+    throw new Error(`Geocoding fehler: ${error.message}`);
+  }
+};
 
   // Generiere Koordinaten im Umkreis
   const generateLocationGrid = (centerLat, centerLon, radiusKm, gridSize = 16) => {
