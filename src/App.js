@@ -300,9 +300,7 @@ data.list.forEach(reading => {
     }
     
     // NEU: Sammle alle Temperaturwerte
-    dailyData[date].allTemperatures.push(reading.main.temp);
     dailyData[date].allTemperatures.push(reading.main.temp_max);
-    dailyData[date].allTemperatures.push(reading.main.temp_min);
     
     dailyData[date].temps.push(reading.main.temp);
     dailyData[date].cloudiness.push(reading.clouds.all);
