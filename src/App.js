@@ -316,39 +316,26 @@ data.list.forEach(reading => {
         throw new Error('Keine Wetterdaten für den gewählten Zeitraum verfügbar');
       }
       
-      // Berechne Tageswerte
-let totalMaxTemp = 0;
+     // Berechne Tageswerte
+let absoluteMaxTemp = -100;
 let totalSunHours = 0;
 let totalRainHours = 0;
 let totalAvgTemp = 0;
 
+// Finde die höchste Temperatur direkt aus den API-Daten
+data.list.forEach(reading => {
+  const readingTime = reading.dt * 1000;
+  if (readingTime >= startDateTime && readingTime <= endDateTime) {
+    absoluteMaxTemp = Math.max(absoluteMaxTemp, reading.main.temp_max);
+  }
+});
+
 Object.values(dailyData).forEach(day => {
-  // NEU: Finde das ECHTE Maximum aller Temperaturen des Tages
-  const realMaxTemp = Math.max(...day.allTemperatures);
-  totalMaxTemp += realMaxTemp;
-  
   const avgCloudiness = day.cloudiness.reduce((a, b) => a + b, 0) / day.cloudiness.length;
   const avgTemp = day.temps.reduce((a, b) => a + b, 0) / day.temps.length;
   totalAvgTemp += avgTemp;
-        
-        // Berechne Sonnenstunden für diesen Tag
-        const maxPossibleSunHours = 12;
-        const sunFactor = Math.max(0, (100 - avgCloudiness) / 100);
-        let daySunHours = maxPossibleSunHours * sunFactor;
-        
-        if (day.rainHours > 0) {
-          daySunHours = Math.max(0, daySunHours - (day.rainHours * 0.7));
-        }
-        
-        totalSunHours += daySunHours;
-        totalRainHours += day.rainHours;
-      });
-      
-      const daysCount = Object.keys(dailyData).length;
-      const avgMaxTemp = totalMaxTemp / daysCount;
-      const avgSunHours = totalSunHours / daysCount;
-      const avgRainHoursPerDay = totalRainHours / daysCount;
-      const avgTemp = totalAvgTemp / daysCount;
+  
+  // Berechne Sonnenstunden für di
       
       // Bestimme Vorhersage
       let forecast;
