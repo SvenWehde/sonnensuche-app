@@ -169,6 +169,46 @@ const HomePage = () => {
         `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)}&limit=5&appid=${currentApiKey}`
       );
       const data = await response.json();
+      // ===== DEBUG START =====
+console.log('');
+console.log('===========================================');
+console.log(`📍 ORT: ${data.city.name}`);
+console.log(`📐 Koordinaten: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+console.log(`📅 Zeitraum: ${startDate} bis ${endDate}`);
+console.log('-------------------------------------------');
+
+// Zeige alle Temperaturwerte für den Zeitraum
+const relevantData = [];
+data.list.forEach(reading => {
+  const readingTime = reading.dt * 1000;
+  const startDateTime = new Date(startDate).getTime();
+  const endDateTime = new Date(endDate).getTime() + (24 * 60 * 60 * 1000);
+  
+  if (readingTime >= startDateTime && readingTime <= endDateTime) {
+    const dateTime = new Date(readingTime);
+    relevantData.push({
+      zeit: dateTime.toLocaleString('de-DE'),
+      temp: reading.main.temp,
+      temp_max: reading.main.temp_max,
+      temp_min: reading.main.temp_min,
+      clouds: reading.clouds.all
+    });
+  }
+});
+
+console.log('🌡️ TEMPERATURDATEN:');
+relevantData.forEach(d => {
+  console.log(`   ${d.zeit}: temp=${d.temp}°C, max=${d.temp_max}°C, min=${d.temp_min}°C, Wolken=${d.clouds}%`);
+});
+
+// Zeige die höchste gefundene Temperatur
+const allTemps = relevantData.flatMap(d => [d.temp, d.temp_max, d.temp_min]);
+const maxFound = Math.max(...allTemps);
+console.log('-------------------------------------------');
+console.log(`🔥 HÖCHSTE TEMPERATUR: ${maxFound}°C`);
+console.log('===========================================');
+console.log('');
+// ===== DEBUG ENDE =====
       
       if (data.length === 0) {
         throw new Error('Ort nicht gefunden');
