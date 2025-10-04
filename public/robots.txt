@@ -1,0 +1,4 @@
+txtUser-agent: *
+Allow: /
+
+Sitemap: https://www.sonnensuche.com/sitemap.xml
