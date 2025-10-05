@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { MapPin, Sun, Thermometer, Calendar, Search, Loader2, Settings, Eye, EyeOff, Star, Navigation, Clock, Download, ChevronRight, Map, Home } from 'lucide-react';
+import { MapPin, Sun, Thermometer, Calendar, Search, Loader2, Settings, Eye, EyeOff, Star, Navigation, Clock, Download, ChevronRight, ChevronDown, Map, Home } from 'lucide-react';
 import Impressum from './Impressum';
 import Datenschutz from './Datenschutz';
 import Blog from './Blog';
@@ -42,6 +42,7 @@ const HomePage = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstruct, setShowIOSInstruct] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
+  const [expandedResult, setExpandedResult] = useState(null);
 
   // Standard API-Key
   const defaultApiKey = 'b0b755e584a3876179481c54767939f5';
@@ -162,78 +163,78 @@ const HomePage = () => {
     return cityName;
   };
 
-  // Geocoding
-const geocodeLocation = async (locationName, currentApiKey) => {
-  try {
-    // Zuerst versuchen wir es mit ", Deutschland" für deutsche Orte
-    let response = await fetch(
-      `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)},DE&limit=5&appid=${currentApiKey}`
-    );
-    let data = await response.json();
-    
-    // Wenn kein deutscher Ort gefunden wurde, suche weltweit
-    if (data.length === 0) {
-      response = await fetch(
-        `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)}&limit=5&appid=${currentApiKey}`
+  // Geocoding mit Deutschland-Priorität
+  const geocodeLocation = async (locationName, currentApiKey) => {
+    try {
+      // Zuerst versuchen wir es mit ", Deutschland" für deutsche Orte
+      let response = await fetch(
+        `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)},DE&limit=5&appid=${currentApiKey}`
       );
-      data = await response.json();
-    }
-    
-    if (data.length === 0) {
-      throw new Error('Ort nicht gefunden');
-    }
-    
-    // Wenn mehrere Orte gefunden wurden, zeige Auswahl
-    if (data.length > 1) {
-      // Priorisiere deutsche Orte
-      const germanResults = data.filter(place => place.country === 'DE');
-      if (germanResults.length > 0) {
-        // Nutze den ersten deutschen Ort
-        const bestResult = germanResults[0];
-        console.log(`Gewählt: ${bestResult.name}, ${bestResult.state || ''}, ${bestResult.country}`);
-        return {
-          lat: bestResult.lat,
-          lon: bestResult.lon,
-          name: bestResult.name,
-          country: bestResult.country
-        };
-      }
-    }
-    
-    // Sortiere nach Priorität (deutsche Orte zuerst, dann nach Bevölkerung)
-    const sortedResults = data.sort((a, b) => {
-      // Deutsche Orte haben Priorität
-      if (a.country === 'DE' && b.country !== 'DE') return -1;
-      if (a.country !== 'DE' && b.country === 'DE') return 1;
+      let data = await response.json();
       
-      // Dann europäische Orte
-      const europeanCountries = ['AT', 'CH', 'NL', 'BE', 'LU', 'PL', 'CZ', 'DK', 'FR'];
-      const aIsEuropean = europeanCountries.includes(a.country);
-      const bIsEuropean = europeanCountries.includes(b.country);
-      if (aIsEuropean && !bIsEuropean) return -1;
-      if (!aIsEuropean && bIsEuropean) return 1;
-      
-      // Dann nach Bevölkerung falls vorhanden
-      if (a.population && b.population) {
-        return b.population - a.population;
+      // Wenn kein deutscher Ort gefunden wurde, suche weltweit
+      if (data.length === 0) {
+        response = await fetch(
+          `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(locationName)}&limit=5&appid=${currentApiKey}`
+        );
+        data = await response.json();
       }
       
-      return 0;
-    });
-    
-    const bestResult = sortedResults[0];
-    console.log(`Ausgewählt: ${bestResult.name}, ${bestResult.state || ''}, ${bestResult.country}`);
-    
-    return {
-      lat: bestResult.lat,
-      lon: bestResult.lon,
-      name: bestResult.name,
-      country: bestResult.country
-    };
-  } catch (error) {
-    throw new Error(`Geocoding fehler: ${error.message}`);
-  }
-};
+      if (data.length === 0) {
+        throw new Error('Ort nicht gefunden');
+      }
+      
+      // Wenn mehrere Orte gefunden wurden, zeige Auswahl
+      if (data.length > 1) {
+        // Priorisiere deutsche Orte
+        const germanResults = data.filter(place => place.country === 'DE');
+        if (germanResults.length > 0) {
+          // Nutze den ersten deutschen Ort
+          const bestResult = germanResults[0];
+          console.log(`Gewählt: ${bestResult.name}, ${bestResult.state || ''}, ${bestResult.country}`);
+          return {
+            lat: bestResult.lat,
+            lon: bestResult.lon,
+            name: bestResult.name,
+            country: bestResult.country
+          };
+        }
+      }
+      
+      // Sortiere nach Priorität (deutsche Orte zuerst, dann nach Bevölkerung)
+      const sortedResults = data.sort((a, b) => {
+        // Deutsche Orte haben Priorität
+        if (a.country === 'DE' && b.country !== 'DE') return -1;
+        if (a.country !== 'DE' && b.country === 'DE') return 1;
+        
+        // Dann europäische Orte
+        const europeanCountries = ['AT', 'CH', 'NL', 'BE', 'LU', 'PL', 'CZ', 'DK', 'FR'];
+        const aIsEuropean = europeanCountries.includes(a.country);
+        const bIsEuropean = europeanCountries.includes(b.country);
+        if (aIsEuropean && !bIsEuropean) return -1;
+        if (!aIsEuropean && bIsEuropean) return 1;
+        
+        // Dann nach Bevölkerung falls vorhanden
+        if (a.population && b.population) {
+          return b.population - a.population;
+        }
+        
+        return 0;
+      });
+      
+      const bestResult = sortedResults[0];
+      console.log(`Ausgewählt: ${bestResult.name}, ${bestResult.state || ''}, ${bestResult.country}`);
+      
+      return {
+        lat: bestResult.lat,
+        lon: bestResult.lon,
+        name: bestResult.name,
+        country: bestResult.country
+      };
+    } catch (error) {
+      throw new Error(`Geocoding fehler: ${error.message}`);
+    }
+  };
 
   // Generiere Koordinaten im Umkreis
   const generateLocationGrid = (centerLat, centerLon, radiusKm, gridSize = 16) => {
@@ -258,7 +259,7 @@ const geocodeLocation = async (locationName, currentApiKey) => {
     return points;
   };
 
-  // KORRIGIERTE fetchWeatherData Funktion
+  // VERBESSERTE fetchWeatherData Funktion mit Tagesdetails
   const fetchWeatherData = async (lat, lon, currentApiKey) => {
     try {
       const response = await fetch(
@@ -270,124 +271,125 @@ const geocodeLocation = async (locationName, currentApiKey) => {
       }
       
       const data = await response.json();
-      // ===== DEBUG START =====
-const startDateTime = new Date(startDate).getTime();
-const endDateTime = new Date(endDate).getTime() + (24 * 60 * 60 * 1000);
-
-console.log('');
-console.log('===========================================');
-console.log(`📍 ORT: ${data.city.name}`);
-console.log(`📐 Koordinaten: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
-console.log(`📅 Zeitraum: ${startDate} bis ${endDate}`);
-console.log('-------------------------------------------');
-
-// Zeige alle Temperaturwerte für den Zeitraum
-const relevantData = [];
-data.list.forEach(reading => {
-  const readingTime = reading.dt * 1000;
-  
-  if (readingTime >= startDateTime && readingTime <= endDateTime) {
-    const dateTime = new Date(readingTime);
-    relevantData.push({
-      zeit: dateTime.toLocaleString('de-DE'),
-      temp: reading.main.temp,
-      temp_max: reading.main.temp_max,
-      temp_min: reading.main.temp_min,
-      clouds: reading.clouds.all
-    });
-  }
-});
-
-console.log('🌡️ TEMPERATURDATEN:');
-relevantData.forEach(d => {
-  console.log(`   ${d.zeit}: temp=${d.temp}°C, max=${d.temp_max}°C, min=${d.temp_min}°C, Wolken=${d.clouds}%`);
-});
-
-// Zeige die höchste gefundene Temperatur
-const allTemps = relevantData.flatMap(d => [d.temp, d.temp_max, d.temp_min]);
-const maxFound = Math.max(...allTemps);
-console.log('-------------------------------------------');
-console.log(`🔥 HÖCHSTE TEMPERATUR: ${maxFound}°C`);
-console.log('===========================================');
-console.log('');
-// ===== DEBUG ENDE =====
-
-const totalDays = Math.ceil((endDateTime - startDateTime) / (24 * 60 * 60 * 1000));
+      
+      const startDateTime = new Date(startDate).getTime();
+      const endDateTime = new Date(endDate).getTime() + (24 * 60 * 60 * 1000);
+      const totalDays = Math.ceil((endDateTime - startDateTime) / (24 * 60 * 60 * 1000));
       
       // Sammle Daten für jeden Tag
-const dailyData = {};
-
-data.list.forEach(reading => {
-  const readingTime = reading.dt * 1000;
-  
-  if (readingTime >= startDateTime && readingTime <= endDateTime) {
-    const date = new Date(readingTime).toISOString().split('T')[0];
-    
-    if (!dailyData[date]) {
-      dailyData[date] = {
-        allTemperatures: [], // NEU: Sammle ALLE Temperaturen
-        temps: [],
-        cloudiness: [],
-        rainHours: 0,
-        readings: 0
-      };
-    }
-    
-    // NEU: Sammle alle Temperaturwerte
-    dailyData[date].allTemperatures.push(reading.main.temp_max);
-    
-    dailyData[date].temps.push(reading.main.temp);
-    dailyData[date].cloudiness.push(reading.clouds.all);
-    dailyData[date].readings++;
-    
-    if (reading.rain && reading.rain['3h'] > 0) {
-      dailyData[date].rainHours += 3;
-    }
-  }
-});
+      const dailyData = {};
+      
+      data.list.forEach(reading => {
+        const readingTime = reading.dt * 1000;
+        
+        if (readingTime >= startDateTime && readingTime <= endDateTime) {
+          const date = new Date(readingTime).toISOString().split('T')[0];
+          
+          if (!dailyData[date]) {
+            dailyData[date] = {
+              allTemperatures: [],
+              temps: [],
+              cloudiness: [],
+              rainHours: 0,
+              readings: 0,
+              weatherReadings: [] // NEU: Speichere alle Wetterlesungen für Details
+            };
+          }
+          
+          // Sammle nur temp_max für Maximaltemperatur
+          dailyData[date].allTemperatures.push(reading.main.temp_max);
+          
+          dailyData[date].temps.push(reading.main.temp);
+          dailyData[date].cloudiness.push(reading.clouds.all);
+          dailyData[date].readings++;
+          
+          // Speichere komplette Wetterlesungen für Detailansicht
+          dailyData[date].weatherReadings.push({
+            time: new Date(readingTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+            temp: reading.main.temp,
+            temp_max: reading.main.temp_max,
+            temp_min: reading.main.temp_min,
+            clouds: reading.clouds.all,
+            rain: reading.rain ? reading.rain['3h'] : 0,
+            weather: reading.weather[0].description
+          });
+          
+          if (reading.rain && reading.rain['3h'] > 0) {
+            dailyData[date].rainHours += 3;
+          }
+        }
+      });
       
       if (Object.keys(dailyData).length === 0) {
         throw new Error('Keine Wetterdaten für den gewählten Zeitraum verfügbar');
       }
       
-    // Berechne Tageswerte
-let absoluteMaxTemp = -100;
-let totalSunHours = 0;
-let totalRainHours = 0;
-let totalAvgTemp = 0;
-
-// Finde die höchste Temperatur direkt aus den API-Daten
-data.list.forEach(reading => {
-  const readingTime = reading.dt * 1000;
-  if (readingTime >= startDateTime && readingTime <= endDateTime) {
-    absoluteMaxTemp = Math.max(absoluteMaxTemp, reading.main.temp_max);
-  }
-});
-
-// Berechne Durchschnittswerte für Sonne und Regen
-Object.values(dailyData).forEach(day => {
-  const avgCloudiness = day.cloudiness.reduce((a, b) => a + b, 0) / day.cloudiness.length;
-  const avgTemp = day.temps.reduce((a, b) => a + b, 0) / day.temps.length;
-  totalAvgTemp += avgTemp;
-  
-  // Berechne Sonnenstunden für diesen Tag
-  const maxPossibleSunHours = 12;
-  const sunFactor = Math.max(0, (100 - avgCloudiness) / 100);
-  let daySunHours = maxPossibleSunHours * sunFactor;
-  
-  if (day.rainHours > 0) {
-    daySunHours = Math.max(0, daySunHours - (day.rainHours * 0.7));
-  }
-  
-  totalSunHours += daySunHours;
-  totalRainHours += day.rainHours;
-});
-
-const daysCount = Object.keys(dailyData).length;
-const avgMaxTemp = absoluteMaxTemp;  // Verwende das absolute Maximum
-const avgSunHours = totalSunHours / daysCount;
-const avgRainHoursPerDay = totalRainHours / daysCount;
-const avgTemp = totalAvgTemp / daysCount;
+      // Berechne Tageswerte
+      let absoluteMaxTemp = -100;
+      let totalSunHours = 0;
+      let totalRainHours = 0;
+      let totalAvgTemp = 0;
+      
+      // Finde die höchste Temperatur direkt aus den API-Daten
+      data.list.forEach(reading => {
+        const readingTime = reading.dt * 1000;
+        if (readingTime >= startDateTime && readingTime <= endDateTime) {
+          absoluteMaxTemp = Math.max(absoluteMaxTemp, reading.main.temp_max);
+        }
+      });
+      
+      // Berechne Durchschnittswerte für Sonne und Regen
+      Object.values(dailyData).forEach(day => {
+        const avgCloudiness = day.cloudiness.reduce((a, b) => a + b, 0) / day.cloudiness.length;
+        const avgTemp = day.temps.reduce((a, b) => a + b, 0) / day.temps.length;
+        totalAvgTemp += avgTemp;
+        
+        // Berechne Sonnenstunden für diesen Tag
+        const maxPossibleSunHours = 12;
+        const sunFactor = Math.max(0, (100 - avgCloudiness) / 100);
+        let daySunHours = maxPossibleSunHours * sunFactor;
+        
+        if (day.rainHours > 0) {
+          daySunHours = Math.max(0, daySunHours - (day.rainHours * 0.7));
+        }
+        
+        totalSunHours += daySunHours;
+        totalRainHours += day.rainHours;
+      });
+      
+      // Sammle Details für jeden Tag
+      const dailyDetails = Object.entries(dailyData).map(([date, dayData]) => {
+        const dayMaxTemp = Math.max(...dayData.allTemperatures);
+        const dayMinTemp = Math.min(...dayData.temps);
+        const avgCloudiness = dayData.cloudiness.reduce((a, b) => a + b, 0) / dayData.cloudiness.length;
+        const sunHours = Math.round((12 * Math.max(0, (100 - avgCloudiness) / 100)) * 10) / 10;
+        
+        // Bestimme Tageswetter
+        let dayForecast = 'Sonnig';
+        if (dayData.rainHours > 4) {
+          dayForecast = 'Regnerisch';
+        } else if (avgCloudiness > 70) {
+          dayForecast = 'Bedeckt';
+        } else if (avgCloudiness > 40) {
+          dayForecast = 'Bewölkt';
+        }
+        
+        return {
+          date: new Date(date).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }),
+          maxTemp: Math.round(dayMaxTemp * 10) / 10,
+          minTemp: Math.round(dayMinTemp * 10) / 10,
+          sunHours: sunHours,
+          rainHours: Math.round(dayData.rainHours * 10) / 10,
+          forecast: dayForecast,
+          hourlyData: dayData.weatherReadings
+        };
+      });
+      
+      const daysCount = Object.keys(dailyData).length;
+      const avgMaxTemp = absoluteMaxTemp;
+      const avgSunHours = totalSunHours / daysCount;
+      const avgRainHoursPerDay = totalRainHours / daysCount;
+      const avgTemp = totalAvgTemp / daysCount;
       
       // Bestimme Vorhersage
       let forecast;
@@ -411,10 +413,9 @@ const avgTemp = totalAvgTemp / daysCount;
         }
       }
       
-      // VERBESSERTES Weather Score System
+      // Weather Score System
       let weatherScore;
       if (searchType === 'sonnenschein') {
-        // Temperatur stark gewichtet
         let tempScore;
         if (avgMaxTemp >= 25) {
           tempScore = 90 + Math.min(10, (avgMaxTemp - 25) * 2);
@@ -425,14 +426,12 @@ const avgTemp = totalAvgTemp / daysCount;
         } else if (avgMaxTemp >= 10) {
           tempScore = 20 + ((avgMaxTemp - 10) * 6);
         } else {
-          // Unter 10°C sehr niedrige Scores
           tempScore = Math.max(0, avgMaxTemp * 2);
         }
         
         const sunScore = Math.max(0, Math.min(100, (avgSunHours / 10) * 100));
         const rainPenalty = Math.min(30, avgRainHoursPerDay * 5);
         
-        // 70% Temperatur, 30% Sonne
         weatherScore = Math.round(Math.max(0, tempScore * 0.7 + sunScore * 0.3 - rainPenalty));
       } else {
         const tempScore = Math.max(0, Math.min(100, (10 - avgTemp) * 10));
@@ -449,7 +448,8 @@ const avgTemp = totalAvgTemp / daysCount;
         cityName: data.city.name,
         totalDays: totalDays,
         forecast: forecast,
-        isOneDay: totalDays === 1
+        isOneDay: totalDays === 1,
+        dailyDetails: dailyDetails
       };
     } catch (error) {
       console.error('Wetter-API Fehler:', error);
@@ -492,6 +492,7 @@ const avgTemp = totalAvgTemp / daysCount;
     setLoading(true);
     setError('');
     setResults([]);
+    setExpandedResult(null);
     
     const minLoadingTime = 4000;
     const searchStartTime = Date.now();
@@ -526,7 +527,8 @@ const avgTemp = totalAvgTemp / daysCount;
             distance: point.distance,
             forecast: weather.forecast,
             totalDays: weather.totalDays,
-            isOneDay: weather.isOneDay
+            isOneDay: weather.isOneDay,
+            dailyDetails: weather.dailyDetails
           };
         }
         return null;
@@ -535,7 +537,6 @@ const avgTemp = totalAvgTemp / daysCount;
       const weatherResults = await Promise.all(weatherPromises);
       let validResults = weatherResults.filter(result => result !== null);
       
-      // WICHTIG: Filtere im Sonnenschein-Modus Orte mit zu niedriger Temperatur
       if (searchType === 'sonnenschein') {
         validResults = validResults.filter(result => result.maxTemp >= 10 || result.weatherScore >= 30);
       }
@@ -993,6 +994,76 @@ const avgTemp = totalAvgTemp / daysCount;
                       )}
                     </div>
 
+                    {/* NEU: Wetterdetails Button */}
+                    <button
+                      onClick={() => setExpandedResult(expandedResult === spot.id ? null : spot.id)}
+                      className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 mb-3 border-2 border-blue-200"
+                    >
+                      {expandedResult === spot.id ? (
+                        <>
+                          <ChevronDown size={20} />
+                          Weniger anzeigen
+                        </>
+                      ) : (
+                        <>
+                          <Calendar size={20} />
+                          Detaillierte Wettervorhersage
+                        </>
+                      )}
+                    </button>
+
+                    {/* NEU: Expandierte Wetterdetails */}
+                    {expandedResult === spot.id && spot.dailyDetails && (
+                      <div className="mt-4 space-y-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4">
+                        <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <Calendar size={18} />
+                          Tagesgenaue Vorhersage
+                        </h4>
+                        {spot.dailyDetails.map((day, idx) => (
+                          <div key={idx} className="bg-white rounded-lg p-4 shadow-sm">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="font-semibold text-gray-800">{day.date}</div>
+                              <div className="text-sm font-medium text-gray-600">{day.forecast}</div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-red-500">🌡️</span>
+                                <span>Max: {day.maxTemp}°C</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-blue-500">🌡️</span>
+                                <span>Min: {day.minTemp}°C</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span>☀️</span>
+                                <span>{day.sunHours}h Sonne</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span>🌧️</span>
+                                <span>{day.rainHours}h Regen</span>
+                              </div>
+                            </div>
+                            {/* Optional: Stündliche Details */}
+                            {day.hourlyData && day.hourlyData.length > 0 && (
+                              <details className="mt-3">
+                                <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+                                  Stündliche Details anzeigen
+                                </summary>
+                                <div className="mt-2 space-y-1">
+                                  {day.hourlyData.map((hour, hIdx) => (
+                                    <div key={hIdx} className="text-xs text-gray-600 flex justify-between">
+                                      <span>{hour.time}</span>
+                                      <span>{hour.temp}°C - {hour.weather}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="space-y-2">
                       <button
                         onClick={() => {
@@ -1116,45 +1187,3 @@ const avgTemp = totalAvgTemp / daysCount;
         marginTop: '80px',
         borderTop: '1px solid rgba(255,255,255,0.1)'
       }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '30px',
-            flexWrap: 'wrap',
-            marginBottom: '20px'
-          }}>
-            <Link to="/impressum" style={{
-              color: 'white',
-              textDecoration: 'none',
-              fontSize: '14px',
-              opacity: 0.9
-            }}>
-              Impressum
-            </Link>
-            <Link to="/datenschutz" style={{
-              color: 'white',
-              textDecoration: 'none',
-              fontSize: '14px',
-              opacity: 0.9
-            }}>
-              Datenschutzerklärung
-            </Link>
-          </div>
-          <p style={{ 
-            fontSize: '13px', 
-            opacity: 0.7,
-            marginTop: '15px'
-          }}>
-            © 2024 Sonnensuche. Alle Rechte vorbehalten.
-          </p>
-        </div>
-      </footer>
-    </div>
-  );
-};
-
-export default App;
