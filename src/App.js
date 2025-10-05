@@ -1187,3 +1187,24 @@ const HomePage = () => {
         marginTop: '80px',
         borderTop: '1px solid rgba(255,255,255,0.1)'
       }}>
+        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '20px' }}>
+          <Link to="/impressum" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>
+            Impressum
+          </Link>
+          <span style={{ color: '#475569' }}>•</span>
+          <Link to="/datenschutz" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>
+            Datenschutz
+          </Link>
+        </div>
+        <div style={{ fontSize: '12px', color: '#64748b' }}>
+          © 2024 Sonnensuche - Alle Rechte vorbehalten
+        </div>
+        <div style={{ fontSize: '11px', color: '#475569', marginTop: '10px' }}>
+          Mit ❤️ entwickelt in Deutschland
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default App;
